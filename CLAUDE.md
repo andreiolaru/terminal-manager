@@ -103,20 +103,32 @@ After each phase:
 - `@electron/rebuild` must run in postinstall
 - electron-builder config needs `asarUnpack: ["node_modules/node-pty/**"]`
 
-## Domain Expertise Skills
+## Domain Expertise (auto-loaded)
 
-Invoke these slash commands to activate project-specific domain expertise in the current conversation:
+### Rules (`.claude/rules/`) — passive, path-triggered
+Domain expertise loads automatically when files matching these paths are read or edited:
 
-| Command | When to use |
-|---------|------------|
-| `/electron-pro` | Main process, IPC design, security, native modules |
-| `/react-specialist` | Component architecture, hooks, performance, Zustand |
-| `/typescript-pro` | Type safety, generics, cross-process type contracts |
-| `/ui-designer` | VS Code-style dark theme, CSS, accessibility |
-| `/javascript-pro` | Async patterns, IPC throughput, memory management |
-| `/powershell-7-expert` | Shell/PTY behavior, escape sequences, terminal emulation |
+| Rule | Triggers on |
+|------|------------|
+| `electron.md` | `src/main/**`, `src/preload/**` |
+| `react.md` | `src/renderer/components/**`, `src/renderer/App.tsx` |
+| `typescript.md` | `src/shared/**`, `*.d.ts`, `tsconfig*.json` |
+| `ui-design.md` | `src/renderer/assets/styles/**`, `*.css` |
+| `javascript-perf.md` | `src/renderer/lib/**`, `hooks/**`, `store/**` |
+| `pty-shell.md` | `src/main/pty-manager.ts`, `ipc-handlers.ts` |
 
-These inject focused, project-specific knowledge (not generic checklists). Use them before starting work in an unfamiliar area of the codebase.
+### Review Agents (`terminal-expertise` plugin) — active, intent-triggered
+When asked to "review the codebase", 5 specialized agents launch in parallel:
+
+| Agent | Domain | Color |
+|-------|--------|-------|
+| `electron-reviewer` | Main process, IPC, security | blue |
+| `react-reviewer` | Components, state, rendering | green |
+| `typescript-reviewer` | Type safety, cross-process contracts | yellow |
+| `ui-reviewer` | CSS, accessibility, design | magenta |
+| `javascript-reviewer` | Async, performance, memory | cyan |
+
+Plugin source: `claude-marketplace/plugins/terminal-expertise/`
 
 ## Common Pitfalls to Avoid
 

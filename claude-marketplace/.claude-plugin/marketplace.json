@@ -1,0 +1,16 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "terminal-manager-local",
+  "description": "Project-local plugins for the terminal-manager project",
+  "owner": {
+    "name": "terminal-manager"
+  },
+  "plugins": [
+    {
+      "name": "terminal-expertise",
+      "description": "Specialized review agents for the terminal-manager Electron+React+xterm.js project. Provides parallel codebase analysis across 5 domains: Electron/IPC, React/state, TypeScript types, UI/CSS, and JavaScript performance.",
+      "source": "./plugins/terminal-expertise",
+      "category": "development"
+    }
+  ]
+}

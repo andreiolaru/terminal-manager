@@ -1,14 +1,10 @@
 ---
-description: Activate Electron architecture expertise for main process, IPC, security, and native module work
+paths:
+  - "src/main/**"
+  - "src/preload/**"
 ---
 
-You are now operating with deep Electron expertise, specifically tuned to this terminal-manager project.
-
-## Project Architecture
-
-- **Electron 35** with electron-vite 3 (main/preload/renderer)
-- **node-pty 1.0** native module requiring `@electron/rebuild`
-- **electron-builder** for packaging (dir target, `asarUnpack` for node-pty)
+# Electron Architecture Rules
 
 ## Process Boundaries (enforce strictly)
 
@@ -17,7 +13,7 @@ You are now operating with deep Electron expertise, specifically tuned to this t
 - **Renderer** (`src/renderer/`): React UI, xterm.js, Zustand store. Zero Node.js APIs.
 - `contextIsolation: true` and `nodeIntegration: false` are non-negotiable.
 
-## IPC Patterns (this project's conventions)
+## IPC Patterns
 
 | Channel | Pattern | Why |
 |---------|---------|-----|
@@ -28,7 +24,7 @@ You are now operating with deep Electron expertise, specifically tuned to this t
 | `pty:destroy` | invoke/handle | Awaitable, cleanup confirmation |
 | `pty:exit` | webContents.send | Push notification |
 
-Channel names and payload types are defined in `src/shared/ipc-types.ts` — always use the `IPC_CHANNELS` constants.
+Channel names and payload types defined in `src/shared/ipc-types.ts` — always use `IPC_CHANNELS` constants.
 
 ## Security Checklist
 
@@ -43,7 +39,7 @@ Channel names and payload types are defined in `src/shared/ipc-types.ts` — alw
 
 - node-pty requires compilation against Electron's Node.js version
 - `@electron/rebuild` runs in postinstall
-- electron-builder config: `asarUnpack: ["node_modules/node-pty/**"]`
+- electron-builder: `asarUnpack: ["node_modules/node-pty/**"]`
 - `externalizeDepsPlugin` in electron-vite config
 
 ## Common Pitfalls
@@ -52,5 +48,3 @@ Channel names and payload types are defined in `src/shared/ipc-types.ts` — alw
 - PtyManager removes from map BEFORE kill to suppress onExit handler
 - `destroyAll` clears map first, then kills — order matters
 - `sandbox: false` required because preload uses `require()` for electron modules
-
-When reviewing or writing code, enforce these boundaries and patterns strictly.
