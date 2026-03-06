@@ -220,6 +220,17 @@ export default function TerminalInstance({ terminalId, isVisible, isActive }: Te
       ref={containerRef}
       className="terminal-container"
       style={{ display: isVisible ? 'block' : 'none' }}
+      onContextMenu={async (e) => {
+        e.preventDefault()
+        try {
+          const text = await navigator.clipboard.readText()
+          if (text && terminalRef.current) {
+            terminalRef.current.paste(text)
+          }
+        } catch {
+          // Clipboard access denied or empty
+        }
+      }}
     />
   )
 }

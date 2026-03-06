@@ -20,5 +20,8 @@
         ]
       }
     ]
+  },
+  "enabledPlugins": {
+    "terminal-expertise@terminal-manager-local": true
   }
 }
