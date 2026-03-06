@@ -5,7 +5,7 @@ const store = () => useTerminalStore.getState()
 
 describe('terminal-store', () => {
   beforeEach(() => {
-    useTerminalStore.setState({ terminals: {}, activeTerminalId: null })
+    useTerminalStore.setState({ terminals: {}, activeTerminalId: null, nextTerminalNumber: 1 })
   })
 
   describe('addTerminal', () => {
@@ -43,16 +43,16 @@ describe('terminal-store', () => {
       expect(store().activeTerminalId).toBe(id3)
     })
 
-    it('counts titles based on current terminal count, not historical', () => {
+    it('uses monotonic counter so titles never repeat after removal', () => {
       const id1 = store().addTerminal() // Terminal 1
       store().addTerminal() // Terminal 2
       store().removeTerminal(id1)
-      store().addTerminal() // Terminal 2 (1 existing when added)
+      store().addTerminal() // Terminal 3 (counter keeps incrementing)
 
       const titles = Object.values(store().terminals)
         .sort((a, b) => a.createdAt - b.createdAt)
         .map((t) => t.title)
-      expect(titles).toEqual(['Terminal 2', 'Terminal 2'])
+      expect(titles).toEqual(['Terminal 2', 'Terminal 3'])
     })
   })
 

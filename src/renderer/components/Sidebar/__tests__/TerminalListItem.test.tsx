@@ -28,9 +28,9 @@ describe('TerminalListItem', () => {
     useTerminalStore.setState({
       terminals: {},
       activeTerminalId: null,
-      setActiveTerminal: mockSetActive,
-      removeTerminal: mockRemove,
-      renameTerminal: mockRename
+      setActiveTerminal: mockSetActive as unknown as (id: string) => void,
+      removeTerminal: mockRemove as unknown as (id: string) => void,
+      renameTerminal: mockRename as unknown as (id: string, title: string) => void
     })
   })
 

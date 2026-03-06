@@ -57,8 +57,9 @@ export default function TerminalListItem({ terminal, isActive }: TerminalListIte
     .filter(Boolean)
     .join(' ')
 
-  // C11: Keyboard handler for list item activation
+  // C11: Keyboard handler for list item activation (skip when editing)
   const handleItemKeyDown = (e: React.KeyboardEvent): void => {
+    if (isEditing) return
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault()
       setActiveTerminal(terminal.id)

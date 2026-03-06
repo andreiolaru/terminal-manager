@@ -7,7 +7,7 @@ const mockTerminal = {
   rows: 24,
   open: vi.fn(),
   write: vi.fn(),
-  onData: vi.fn(() => ({ dispose: vi.fn() })),
+  onData: vi.fn((_cb: (data: string) => void) => ({ dispose: vi.fn() })),
   onFocus: vi.fn(() => ({ dispose: vi.fn() })),
   focus: vi.fn(),
   dispose: vi.fn(),
