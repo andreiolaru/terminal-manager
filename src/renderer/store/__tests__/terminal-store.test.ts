@@ -5,7 +5,7 @@ const store = () => useTerminalStore.getState()
 
 describe('terminal-store', () => {
   beforeEach(() => {
-    useTerminalStore.setState({ terminals: {}, activeTerminalId: null, nextTerminalNumber: 1 })
+    useTerminalStore.setState({ terminals: {}, activeTerminalId: null, nextTerminalNumber: 1, splitTree: null })
   })
 
   describe('addTerminal', () => {
@@ -140,6 +140,102 @@ describe('terminal-store', () => {
       const id = store().addTerminal()
       store().setTerminalDead('non-existent')
       expect(store().terminals[id].isAlive).toBe(true)
+    })
+  })
+
+  describe('splitTree integration', () => {
+    it('addTerminal sets splitTree to a leaf when tree is null', () => {
+      const id = store().addTerminal()
+      expect(store().splitTree).toEqual({ type: 'leaf', terminalId: id })
+    })
+
+    it('addTerminal does not modify splitTree when tree already exists', () => {
+      const id1 = store().addTerminal()
+      store().addTerminal()
+      // Tree should still be the original single leaf
+      expect(store().splitTree).toEqual({ type: 'leaf', terminalId: id1 })
+    })
+
+    it('removeTerminal updates splitTree', () => {
+      const id = store().addTerminal()
+      store().removeTerminal(id)
+      expect(store().splitTree).toBeNull()
+    })
+
+    it('removeTerminal collapses branch to surviving sibling', () => {
+      const id1 = store().addTerminal()
+      store().splitTerminal(id1, 'horizontal')
+      const ids = Object.keys(store().terminals)
+      const id2 = ids.find((i) => i !== id1)!
+
+      store().removeTerminal(id1)
+      expect(store().splitTree).toEqual({ type: 'leaf', terminalId: id2 })
+    })
+  })
+
+  describe('splitTerminal', () => {
+    it('splits a terminal horizontally', () => {
+      const id1 = store().addTerminal()
+      store().splitTerminal(id1, 'horizontal')
+
+      const tree = store().splitTree
+      expect(tree?.type).toBe('branch')
+      if (tree?.type === 'branch') {
+        expect(tree.direction).toBe('horizontal')
+        expect(tree.first).toEqual({ type: 'leaf', terminalId: id1 })
+        expect(tree.second.type).toBe('leaf')
+        expect(tree.ratio).toBe(0.5)
+      }
+    })
+
+    it('splits a terminal vertically', () => {
+      const id1 = store().addTerminal()
+      store().splitTerminal(id1, 'vertical')
+
+      const tree = store().splitTree
+      expect(tree?.type).toBe('branch')
+      if (tree?.type === 'branch') {
+        expect(tree.direction).toBe('vertical')
+      }
+    })
+
+    it('creates a new terminal in the store', () => {
+      const id1 = store().addTerminal()
+      store().splitTerminal(id1, 'horizontal')
+      expect(Object.keys(store().terminals)).toHaveLength(2)
+    })
+
+    it('sets the new terminal as active', () => {
+      const id1 = store().addTerminal()
+      store().splitTerminal(id1, 'horizontal')
+      expect(store().activeTerminalId).not.toBe(id1)
+    })
+
+    it('is a no-op for non-existent terminal ID', () => {
+      store().addTerminal()
+      const treeBefore = store().splitTree
+      store().splitTerminal('non-existent', 'horizontal')
+      expect(store().splitTree).toEqual(treeBefore)
+      expect(Object.keys(store().terminals)).toHaveLength(1)
+    })
+
+    it('supports nested splits', () => {
+      const id1 = store().addTerminal()
+      store().splitTerminal(id1, 'horizontal')
+      const tree1 = store().splitTree
+      const id2 = tree1?.type === 'branch'
+        ? (tree1.second as { type: 'leaf'; terminalId: string }).terminalId
+        : ''
+
+      store().splitTerminal(id2, 'vertical')
+      const tree2 = store().splitTree
+      expect(tree2?.type).toBe('branch')
+      if (tree2?.type === 'branch') {
+        expect(tree2.second.type).toBe('branch')
+        if (tree2.second.type === 'branch') {
+          expect(tree2.second.direction).toBe('vertical')
+        }
+      }
     })
   })
 

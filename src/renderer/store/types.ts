@@ -37,9 +37,11 @@ export interface TerminalState {
   terminals: Record<TerminalId, TerminalInfo>
   activeTerminalId: TerminalId | null
   nextTerminalNumber: number
+  splitTree: SplitNode | null
 
   addTerminal: () => TerminalId
   removeTerminal: (id: TerminalId) => void
+  splitTerminal: (id: TerminalId, direction: SplitDirection) => void
   setActiveTerminal: (id: TerminalId) => void
   renameTerminal: (id: TerminalId, title: string) => void
   setTerminalDead: (id: TerminalId) => void

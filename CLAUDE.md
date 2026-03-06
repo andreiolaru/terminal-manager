@@ -74,7 +74,7 @@ Current progress is tracked here. Update as phases complete:
 
 - [x] **Phase 1**: Scaffold + single terminal working
 - [x] **Phase 2**: Multiple terminals + sidebar
-- [ ] **Phase 3**: Split panes (allotment + recursive tree)
+- [x] **Phase 3**: Split panes (allotment + recursive tree)
 - [ ] **Phase 4**: Terminal groups / tabs
 - [ ] **Phase 5**: Polish + keyboard shortcuts
 - [ ] **Phase 6**: Extensibility hooks (config, theming scaffold)
