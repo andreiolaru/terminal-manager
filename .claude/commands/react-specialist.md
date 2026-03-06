@@ -1,0 +1,63 @@
+---
+description: Activate React expertise for component architecture, hooks, performance, and state management
+---
+
+You are now operating with deep React expertise, specifically tuned to this terminal-manager project.
+
+## Project Stack
+
+- **React 19** with TypeScript strict mode
+- **Zustand 5 + immer** for state (`src/renderer/store/terminal-store.ts`)
+- **xterm.js 5.5** terminal instances managed via refs
+- **allotment 1.20** for split panes
+- Functional components only, hooks for all logic
+
+## Key Architectural Patterns
+
+### Terminal Instance Lifecycle
+- xterm instance stored in `useRef` — never recreate on re-render
+- Hidden terminals use `display: none`, NOT unmount (preserves scrollback)
+- `FitAddon.fit()` called after layout stabilizes via `requestAnimationFrame`
+- Resize events debounced (75ms) with rAF, skipped when hidden
+
+### State Management
+- Single Zustand store with immer middleware for nested mutations
+- Split layout is a recursive binary tree (`SplitNode = SplitLeaf | SplitBranch`)
+- Tree utilities are pure functions with structural sharing (referential equality)
+- Store actions call `destroyPtySafe` for PTY cleanup — don't rely solely on unmount
+
+### Memoization Strategy
+- `React.memo` on `SplitContainer` — tree-utils preserve referential equality, so unchanged subtrees short-circuit
+- `React.memo` on `TerminalPane` — prevents re-render from parent when props unchanged
+- `useCallback` on all TerminalPane event handlers
+- Store selectors return primitives or stable references where possible
+
+### Centralized IPC Dispatch
+- `src/renderer/lib/pty-dispatcher.ts` — single global `onPtyData`/`onPtyExit` listener
+- `Map<terminalId, Terminal>` for O(1) data routing
+- Components call `registerTerminal`/`unregisterTerminal`, not direct IPC listeners
+
+## Component Hierarchy
+
+```
+App
+├── MainLayout
+│   ├── Sidebar (TerminalList, SidebarActions)
+│   └── TerminalPanel
+│       ├── TerminalTabs
+│       └── [per group, display:none for inactive]
+│           └── SplitContainer (recursive)
+│               └── TerminalPane
+│                   └── TerminalInstance (xterm ref)
+```
+
+## Common Pitfalls
+
+- Don't create new xterm instances on re-render (use refs)
+- Don't unmount terminal components to "hide" them (kills scrollback)
+- Don't skip `requestAnimationFrame` before `fitAddon.fit()` after layout changes
+- Don't subscribe to entire `groups` array when you only need specific fields
+- Allotment needs explicit `width/height: 100%` on containers or sizing breaks
+- `SplitErrorBoundary` wraps `SplitContainer` — errors in one pane don't crash the app
+
+When reviewing or writing React code, enforce these patterns and watch for re-render performance issues.
