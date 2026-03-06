@@ -1,6 +1,11 @@
 import * as pty from 'node-pty'
 import { BrowserWindow } from 'electron'
 import type { ClaudeCodeDetector } from './claude-detector'
+import { extractOscSignals } from './claude-detector'
+import { IPC_CHANNELS } from '../shared/ipc-types'
+
+// OSC title patterns that indicate Claude Code is running
+const CLAUDE_TITLE_PATTERN = /^[\u273B*]|claude/i
 
 export class PtyManager {
   private ptys = new Map<string, pty.IPty>()
@@ -32,6 +37,16 @@ export class PtyManager {
     ptyProcess.onData((data) => {
       if (this.window && !this.window.isDestroyed()) {
         this.window.webContents.send('pty:data', id, data)
+      }
+      // Auto-register with Claude detector if we see Claude Code's OSC title
+      if (this.detector && !this.detector.isRegistered(id)) {
+        const osc = extractOscSignals(data)
+        if (osc.title && CLAUDE_TITLE_PATTERN.test(osc.title)) {
+          this.detector.register(id)
+          if (this.window && !this.window.isDestroyed()) {
+            this.window.webContents.send(IPC_CHANNELS.CLAUDE_STATUS, id, 'idle')
+          }
+        }
       }
       this.detector?.feed(id, data)
     })

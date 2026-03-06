@@ -188,9 +188,7 @@ export default function TerminalInstance({ terminalId, isVisible, isActive }: Te
         persistedTerminals.set(terminalId, { terminal, fitAddon })
       } else {
         // Terminal was removed — full cleanup
-        if (isClaudeTerminal) {
-          ipcApi.unregisterClaude(terminalId)
-        }
+        ipcApi.unregisterClaude(terminalId)
         unregisterTerminal(terminalId)
         terminal.dispose()
         ipcApi.destroyPty(terminalId).catch(() => {})

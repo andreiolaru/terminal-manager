@@ -312,6 +312,9 @@ export const useTerminalStore = create<TerminalState>()(
         if (state.terminals[id]) {
           state.terminals[id].claudeStatus = status
           state.terminals[id].claudeStatusTitle = contextTitle
+          if (!state.terminals[id].claudeCode) {
+            state.terminals[id].claudeCode = true
+          }
         }
       })
     },
