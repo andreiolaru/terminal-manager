@@ -138,7 +138,7 @@ function createWindow(): void {
               type: 'info',
               title: 'About Terminal Manager',
               message: 'Terminal Manager',
-              detail: 'A VS Code-style integrated terminal manager.\nBuilt with Electron + React + xterm.js',
+              detail: 'A VS Code-style integrated terminal manager.\nBuilt with Electron + React + xterm.js.\nBy Andrei Olaru',
             })
           },
         },

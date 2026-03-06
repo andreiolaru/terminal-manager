@@ -1,0 +1,57 @@
+.status-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 8px;
+  height: 24px;
+  background: var(--tm-sidebar-bg);
+  border-top: 1px solid var(--tm-border);
+  font-size: 12px;
+  user-select: none;
+  overflow: hidden;
+  z-index: 100;
+}
+
+.status-bar-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 8px;
+  height: 100%;
+  background: none;
+  border: none;
+  color: var(--tm-text-secondary);
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  border-radius: 2px;
+  white-space: nowrap;
+}
+
+.status-bar-item:hover {
+  background: var(--tm-hover-bg);
+  color: var(--tm-text-primary);
+}
+
+.status-bar-icon {
+  font-size: 10px;
+  line-height: 1;
+}
+
+.status-bar-icon.idle { color: #6e7681; }
+.status-bar-icon.working { color: #58a6ff; }
+.status-bar-icon.needs-input { color: #d29922; }
+.status-bar-icon.completed { color: #3fb950; }
+
+.status-bar-label {
+  color: var(--tm-text-secondary);
+}
+
+.status-bar-status {
+  color: var(--tm-text-muted);
+  font-size: 11px;
+}

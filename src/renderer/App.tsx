@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import MainLayout from './components/Layout/MainLayout'
+import StatusBar from './components/Layout/StatusBar'
 import { useTerminalStore } from './store/terminal-store'
 import { usePtyIpc } from './hooks/usePtyIpc'
 import { useShortcuts } from './hooks/useShortcuts'
@@ -38,7 +39,12 @@ function App() {
     }
   }, [addGroup])
 
-  return <MainLayout />
+  return (
+    <>
+      <MainLayout />
+      <StatusBar />
+    </>
+  )
 }
 
 export default App
