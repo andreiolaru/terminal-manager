@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, session } from 'electron'
+import { app, BrowserWindow, dialog, Menu, session } from 'electron'
 import { join } from 'path'
 import { PtyManager } from './pty-manager'
 import { registerIpcHandlers } from './ipc-handlers'
@@ -62,14 +62,66 @@ function createWindow(): void {
 
   ptyManager.setWindow(mainWindow)
 
-  const menuItems: Electron.MenuItemConstructorOptions[] = SHORTCUT_NAMES.map((name) => ({
+  const shortcutItems: Electron.MenuItemConstructorOptions[] = SHORTCUT_NAMES.map((name) => ({
     label: name.split('-').map(w => w[0].toUpperCase() + w.slice(1)).join(' '),
     accelerator: SHORTCUT_ACCELERATORS[name],
     click: (): void => {
       mainWindow.webContents.send(`shortcut:${name}`)
     }
   }))
-  Menu.setApplicationMenu(Menu.buildFromTemplate([{ label: 'Shortcuts', submenu: menuItems }]))
+
+  const sendShortcut = (name: string): void => {
+    mainWindow.webContents.send(`shortcut:${name}`)
+  }
+
+  const viewSubmenu: Electron.MenuItemConstructorOptions[] = [
+    { label: 'Split Right', click: (): void => sendShortcut('split-right') },
+    { label: 'Split Down', click: (): void => sendShortcut('split-down') },
+    { type: 'separator' },
+    { role: 'zoomIn' },
+    { role: 'zoomOut' },
+    { role: 'resetZoom' },
+  ]
+  if (isDev) {
+    viewSubmenu.push({ type: 'separator' }, { role: 'toggleDevTools' })
+  }
+
+  Menu.setApplicationMenu(Menu.buildFromTemplate([
+    { label: 'Shortcuts', submenu: shortcutItems },
+    {
+      label: 'File',
+      submenu: [
+        { label: 'New Terminal', click: (): void => sendShortcut('new-terminal') },
+        { label: 'Close Terminal', click: (): void => sendShortcut('close-terminal') },
+        { type: 'separator' },
+        { role: 'quit' },
+      ],
+    },
+    {
+      label: 'Edit',
+      submenu: [
+        { role: 'copy', accelerator: 'CmdOrCtrl+Shift+C' },
+        { role: 'paste', accelerator: 'CmdOrCtrl+Shift+V' },
+      ],
+    },
+    { label: 'View', submenu: viewSubmenu },
+    {
+      label: 'Help',
+      submenu: [
+        {
+          label: 'About Terminal Manager',
+          click: (): void => {
+            dialog.showMessageBox(mainWindow, {
+              type: 'info',
+              title: 'About Terminal Manager',
+              message: 'Terminal Manager',
+              detail: 'A VS Code-style integrated terminal manager.\nBuilt with Electron + React + xterm.js',
+            })
+          },
+        },
+      ],
+    },
+  ]))
 
   if (process.env.ELECTRON_RENDERER_URL) {
     mainWindow.loadURL(process.env.ELECTRON_RENDERER_URL)
