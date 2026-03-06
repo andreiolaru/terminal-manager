@@ -7,7 +7,11 @@
     "dev": "electron-vite dev",
     "build": "electron-vite build",
     "preview": "electron-vite preview",
-    "rebuild": "electron-builder install-app-deps"
+    "rebuild": "electron-builder install-app-deps",
+    "test": "vitest run --config vitest.config.ts && vitest run --config vitest.config.renderer.ts",
+    "test:watch": "vitest --config vitest.config.renderer.ts",
+    "test:main": "vitest run --config vitest.config.ts",
+    "test:renderer": "vitest run --config vitest.config.renderer.ts"
   },
   "dependencies": {
     "@xterm/addon-fit": "^0.10.0",
@@ -20,6 +24,9 @@
   },
   "devDependencies": {
     "@electron/rebuild": "^3.7.0",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@types/uuid": "^10.0.0",
@@ -27,8 +34,10 @@
     "electron": "^35.0.0",
     "electron-builder": "^25.0.0",
     "electron-vite": "^3.0.0",
+    "jsdom": "^28.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "vitest": "^4.0.18"
   }
 }
