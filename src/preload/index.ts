@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { IPC_CHANNELS, SHORTCUT_NAMES } from '../shared/ipc-types'
 import type { PtyCreateOptions, ShortcutName } from '../shared/ipc-types'
+import type { LayoutTemplate } from '../shared/template-types'
 
 const shortcutWhitelist = new Set<string>(SHORTCUT_NAMES)
 
@@ -49,6 +50,18 @@ const electronAPI = {
 
   setWindowTitle(title: string): void {
     ipcRenderer.send(IPC_CHANNELS.WINDOW_SET_TITLE, title)
+  },
+
+  listTemplates(): Promise<LayoutTemplate[]> {
+    return ipcRenderer.invoke(IPC_CHANNELS.TEMPLATES_LIST)
+  },
+
+  saveTemplates(templates: LayoutTemplate[]): Promise<void> {
+    return ipcRenderer.invoke(IPC_CHANNELS.TEMPLATES_SAVE, templates)
+  },
+
+  getTemplatesPath(): Promise<string> {
+    return ipcRenderer.invoke(IPC_CHANNELS.TEMPLATES_GET_PATH)
   }
 }
 

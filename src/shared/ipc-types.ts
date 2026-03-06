@@ -6,6 +6,9 @@ export const IPC_CHANNELS = {
   PTY_DESTROY: 'pty:destroy',
   PTY_EXIT: 'pty:exit',
   WINDOW_SET_TITLE: 'window:set-title',
+  TEMPLATES_LIST: 'templates:list',
+  TEMPLATES_SAVE: 'templates:save',
+  TEMPLATES_GET_PATH: 'templates:get-path',
 } as const
 
 export const SHORTCUT_NAMES = [

@@ -1,8 +1,10 @@
 import { ipcMain, BrowserWindow } from 'electron'
 import { existsSync } from 'fs'
 import { PtyManager } from './pty-manager'
+import { TemplateStorage } from './template-storage'
 import { IPC_CHANNELS } from '../shared/ipc-types'
 import type { PtyCreateOptions } from '../shared/ipc-types'
+import type { LayoutTemplate } from '../shared/template-types'
 
 const ALLOWED_SHELLS = new Set([
   'powershell.exe',
@@ -12,6 +14,12 @@ const ALLOWED_SHELLS = new Set([
   'wsl.exe',
   'git-bash.exe'
 ])
+
+let templateStorage: TemplateStorage | null = null
+function getTemplateStorage(): TemplateStorage {
+  if (!templateStorage) templateStorage = new TemplateStorage()
+  return templateStorage
+}
 
 export function registerIpcHandlers(ptyManager: PtyManager): void {
   ipcMain.handle(
@@ -53,5 +61,17 @@ export function registerIpcHandlers(ptyManager: PtyManager): void {
 
   ipcMain.on(IPC_CHANNELS.WINDOW_SET_TITLE, (event, title: string) => {
     BrowserWindow.fromWebContents(event.sender)?.setTitle(title)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.TEMPLATES_LIST, async () => {
+    return getTemplateStorage().list()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.TEMPLATES_SAVE, async (_, templates: LayoutTemplate[]) => {
+    getTemplateStorage().save(templates)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.TEMPLATES_GET_PATH, async () => {
+    return getTemplateStorage().getPath()
   })
 }

@@ -3,9 +3,11 @@ import { persist, createJSONStorage } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
 import { v4 as uuid } from 'uuid'
 import type { TerminalState, TerminalGroup, NavigationDirection } from './types'
+import type { LayoutTemplate } from '../../shared/template-types'
 import { DEFAULT_SHELL } from '../lib/constants'
 import { destroyPtySafe } from '../lib/ipc-api'
 import { splitNode as splitTreeNode, removeNode, collectLeafIds, containsLeaf, findAdjacentTerminal } from '../lib/tree-utils'
+import { instantiateLayoutNode } from '../lib/template-utils'
 
 function findGroupForTerminal(groups: TerminalGroup[], terminalId: string): TerminalGroup | undefined {
   return groups.find((g) => containsLeaf(g.splitTree, terminalId))
@@ -261,6 +263,47 @@ export const useTerminalStore = create<TerminalState>()(
       if (targetId) {
         useTerminalStore.getState().setActiveTerminal(targetId)
       }
+    },
+
+    instantiateLayout: (template: LayoutTemplate): string => {
+      const groupId = uuid()
+      let failed = false
+
+      set((state) => {
+        const result = instantiateLayoutNode(template.layout, state.nextTerminalNumber)
+
+        if (result.terminals.length === 0) {
+          failed = true
+          return
+        }
+
+        for (const t of result.terminals) {
+          state.terminals[t.id] = t
+        }
+        state.nextTerminalNumber = result.nextTerminalNumber
+
+        const group: TerminalGroup = {
+          id: groupId,
+          label: template.name,
+          splitTree: result.splitTree,
+          activeTerminalId: result.terminals[0].id,
+          icon: template.icon,
+          color: template.color,
+          backgroundGradient: template.backgroundGradient
+        }
+        state.groups.push(group)
+        state.nextGroupNumber++
+        state.activeGroupId = groupId
+      })
+      return failed ? '' : groupId
+    },
+
+    clearStartupCommand: (id): void => {
+      set((state) => {
+        if (state.terminals[id]) {
+          delete state.terminals[id].startupCommand
+        }
+      })
     }
   })),
   {

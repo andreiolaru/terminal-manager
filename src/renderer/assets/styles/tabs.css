@@ -25,7 +25,7 @@
 
 .terminal-tab.active {
   background: var(--tm-tab-active-bg);
-  border-bottom-color: var(--tm-accent);
+  border-bottom-color: var(--tm-group-color, var(--tm-accent));
 }
 
 .terminal-tab:focus-visible {
@@ -114,6 +114,128 @@
 }
 
 .terminal-tab-close:focus-visible {
+  outline: 1px solid var(--tm-accent);
+  outline-offset: -1px;
+}
+
+.terminal-tab-icon {
+  font-size: 11px;
+  font-family: 'Cascadia Code', 'Consolas', monospace;
+  color: var(--tm-group-color, var(--tm-text-secondary));
+  flex-shrink: 0;
+}
+
+/* Template launcher dropdown */
+.template-launcher {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.template-launcher-btn {
+  background: none;
+  border: none;
+  color: var(--tm-text-primary);
+  font-size: 11px;
+  width: 24px;
+  height: 30px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.template-launcher-btn:hover,
+.template-launcher-btn:focus-visible {
+  background: var(--tm-hover-bg);
+}
+
+.template-launcher-btn:focus-visible {
+  outline: 1px solid var(--tm-accent);
+  outline-offset: -1px;
+}
+
+.template-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 200px;
+  background: var(--tm-tab-inactive-bg);
+  border: 1px solid var(--tm-border);
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  z-index: 100;
+  padding: 4px 0;
+}
+
+.template-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--tm-text-primary);
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+}
+
+.template-dropdown-item:hover {
+  background: var(--tm-hover-bg);
+}
+
+.template-dropdown-item .template-icon {
+  font-size: 11px;
+  font-family: 'Cascadia Code', 'Consolas', monospace;
+  width: 20px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.template-dropdown-item .template-color-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.template-dropdown-separator {
+  height: 1px;
+  background: var(--tm-border);
+  margin: 4px 0;
+}
+
+.template-dropdown-empty {
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--tm-text-muted);
+}
+
+/* Template manager gear button */
+.template-manager-btn {
+  background: none;
+  border: none;
+  color: var(--tm-text-secondary);
+  font-size: 13px;
+  width: 24px;
+  height: 30px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.template-manager-btn:hover,
+.template-manager-btn:focus-visible {
+  background: var(--tm-hover-bg);
+  color: var(--tm-text-primary);
+}
+
+.template-manager-btn:focus-visible {
   outline: 1px solid var(--tm-accent);
   outline-offset: -1px;
 }

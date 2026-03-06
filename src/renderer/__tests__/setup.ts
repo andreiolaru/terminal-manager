@@ -15,7 +15,10 @@ const electronAPI = {
   onPtyData: vi.fn(() => vi.fn()),
   onPtyExit: vi.fn(() => vi.fn()),
   onShortcut: vi.fn(() => vi.fn()),
-  setWindowTitle: vi.fn()
+  setWindowTitle: vi.fn(),
+  listTemplates: vi.fn(() => Promise.resolve([])),
+  saveTemplates: vi.fn(() => Promise.resolve()),
+  getTemplatesPath: vi.fn(() => Promise.resolve(''))
 }
 
 Object.defineProperty(window, 'electronAPI', {

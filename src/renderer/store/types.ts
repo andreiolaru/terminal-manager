@@ -7,6 +7,8 @@ export interface TerminalInfo {
   cwd: string
   isAlive: boolean
   createdAt: number
+  startupCommand?: string
+  claudeCode?: boolean
 }
 
 export type SplitDirection = 'horizontal' | 'vertical'
@@ -32,6 +34,13 @@ export interface TerminalGroup {
   label: string
   splitTree: SplitNode
   activeTerminalId: TerminalId
+  icon?: string
+  color?: string
+  backgroundGradient?: {
+    from: string
+    to: string
+    angle?: number
+  }
 }
 
 export interface TerminalState {
@@ -55,4 +64,7 @@ export interface TerminalState {
 
   cycleGroup: (delta: 1 | -1) => void
   navigatePane: (direction: NavigationDirection) => void
+
+  instantiateLayout: (template: import('../../shared/template-types').LayoutTemplate) => string
+  clearStartupCommand: (id: TerminalId) => void
 }

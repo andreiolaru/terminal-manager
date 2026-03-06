@@ -3,7 +3,8 @@ import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import { WebglAddon } from '@xterm/addon-webgl'
 import { ipcApi } from '../../lib/ipc-api'
-import { registerTerminal, unregisterTerminal } from '../../lib/pty-dispatcher'
+import { registerTerminal, unregisterTerminal, registerFirstDataCallback } from '../../lib/pty-dispatcher'
+import { useTerminalStore } from '../../store/terminal-store'
 import { defaultConfig } from '../../lib/config'
 import { RESIZE_DEBOUNCE_MS } from '../../lib/constants'
 import '@xterm/xterm/css/xterm.css'
@@ -67,13 +68,27 @@ export default function TerminalInstance({ terminalId, isVisible, isActive }: Te
       terminal.write(`\r\n\x1b[90m[Process exited with code ${exitCode}]\x1b[0m\r\n`)
     })
 
+    const terminalInfo = useTerminalStore.getState().terminals[terminalId]
+    const startupCommand = terminalInfo?.startupCommand
+
     ipcApi.createPty({
       id: terminalId,
+      shell: terminalInfo?.shell,
+      cwd: terminalInfo?.cwd || undefined,
       cols: terminal.cols,
       rows: terminal.rows
     }).catch((err) => {
       terminal.write(`\r\n\x1b[91m[Failed to start terminal: ${err instanceof Error ? err.message : String(err)}]\x1b[0m\r\n`)
     })
+
+    if (startupCommand) {
+      registerFirstDataCallback(terminalId, () => {
+        setTimeout(() => {
+          ipcApi.writePty(terminalId, startupCommand + '\r')
+          useTerminalStore.getState().clearStartupCommand(terminalId)
+        }, 100)
+      })
+    }
 
     const onDataDisposable = terminal.onData((data) => {
       ipcApi.writePty(terminalId, data)

@@ -6,6 +6,7 @@ type ExitCallback = (exitCode: number) => void
 
 const terminals = new Map<string, Terminal>()
 const exitCallbacks = new Map<string, ExitCallback>()
+const firstDataCallbacks = new Map<string, () => void>()
 
 let unsubData: (() => void) | null = null
 let unsubExit: (() => void) | null = null
@@ -15,6 +16,11 @@ function ensureListeners(): void {
 
   unsubData = ipcApi.onPtyData((id, data) => {
     terminals.get(id)?.write(data)
+    const cb = firstDataCallbacks.get(id)
+    if (cb) {
+      firstDataCallbacks.delete(id)
+      cb()
+    }
   })
 
   unsubExit = ipcApi.onPtyExit((id, exitCode) => {
@@ -29,9 +35,14 @@ export function registerTerminal(id: string, terminal: Terminal, onExit: ExitCal
   exitCallbacks.set(id, onExit)
 }
 
+export function registerFirstDataCallback(id: string, callback: () => void): void {
+  firstDataCallbacks.set(id, callback)
+}
+
 export function unregisterTerminal(id: string): void {
   terminals.delete(id)
   exitCallbacks.delete(id)
+  firstDataCallbacks.delete(id)
 
   if (terminals.size === 0) {
     unsubData?.()
@@ -44,6 +55,7 @@ export function unregisterTerminal(id: string): void {
 export function _resetForTesting(): void {
   terminals.clear()
   exitCallbacks.clear()
+  firstDataCallbacks.clear()
   unsubData?.()
   unsubExit?.()
   unsubData = null

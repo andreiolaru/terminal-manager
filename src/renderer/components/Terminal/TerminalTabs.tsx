@@ -1,5 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useTerminalStore } from '../../store/terminal-store'
+import TemplateLauncher from './TemplateLauncher'
+import TemplateManager from './TemplateManager'
 import '../../assets/styles/tabs.css'
 
 export default function TerminalTabs() {
@@ -12,6 +15,7 @@ export default function TerminalTabs() {
 
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editValue, setEditValue] = useState('')
+  const [managerOpen, setManagerOpen] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -60,7 +64,9 @@ export default function TerminalTabs() {
           tabIndex={group.id === activeGroupId ? 0 : -1}
           onClick={() => setActiveGroup(group.id)}
           onDoubleClick={() => handleDoubleClick(group.id, group.label)}
+          style={group.color ? { '--tm-group-color': group.color } as React.CSSProperties : undefined}
         >
+          {group.icon && <span className="terminal-tab-icon">{group.icon}</span>}
           {editingId === group.id ? (
             <input
               ref={inputRef}
@@ -92,6 +98,11 @@ export default function TerminalTabs() {
       >
         +
       </button>
+      <TemplateLauncher onManageTemplates={() => setManagerOpen(true)} />
+      {managerOpen && createPortal(
+        <TemplateManager onClose={() => setManagerOpen(false)} />,
+        document.body
+      )}
     </div>
   )
 }
