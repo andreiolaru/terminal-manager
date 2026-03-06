@@ -58,6 +58,7 @@ terminal-manager/
 │       │   │   └── SidebarActions.tsx
 │       │   ├── Terminal/
 │       │   │   ├── TerminalPanel.tsx
+│       │   │   ├── TerminalPane.tsx      # Title bar + TerminalInstance wrapper
 │       │   │   ├── TerminalInstance.tsx
 │       │   │   └── TerminalTabs.tsx
 │       │   ├── SplitPane/
@@ -197,7 +198,10 @@ interface TerminalState {
         ├── <TerminalTabs />          // One tab per group
         └── <SplitContainer node={activeGroup.splitTree}>
             // Recursive:
-            // leaf  → <TerminalInstance />
+            // leaf  → <TerminalPane>        // wrapper with title bar
+            //             <TerminalTitleBar />  // shows terminal title + split/close buttons
+            //             <TerminalInstance />   // xterm.js
+            //         </TerminalPane>
             // branch → <Allotment> with two <SplitContainer> children
 ```
 
@@ -206,7 +210,7 @@ interface TerminalState {
 ```tsx
 function SplitContainer({ node }: { node: SplitNode }) {
   if (node.type === 'leaf') {
-    return <TerminalInstance terminalId={node.terminalId} />;
+    return <TerminalPane terminalId={node.terminalId} />;
   }
   return (
     <Allotment vertical={node.direction === 'vertical'}>
@@ -220,6 +224,37 @@ function SplitContainer({ node }: { node: SplitNode }) {
   );
 }
 ```
+
+### TerminalPane — Title Bar per Split Pane
+
+Each terminal in a split has a **title bar** at the top showing:
+- Terminal title (from store, e.g. "PowerShell - project-dir")
+- Visual indicator when focused (highlight/border)
+- Action buttons on hover: Split Right, Split Down, Close
+
+```tsx
+// TerminalPane.tsx — wraps each terminal leaf in the split tree
+function TerminalPane({ terminalId }: { terminalId: TerminalId }) {
+  const title = useTerminalStore(s => s.terminals[terminalId]?.title);
+  const isActive = useTerminalStore(s => /* activeTerminalId === terminalId */);
+
+  return (
+    <div className={`terminal-pane ${isActive ? 'active' : ''}`}>
+      <div className="terminal-title-bar">
+        <span className="terminal-title">{title}</span>
+        <div className="terminal-title-actions">
+          {/* Split Right, Split Down, Close buttons — visible on hover */}
+        </div>
+      </div>
+      <div className="terminal-content">
+        <TerminalInstance terminalId={terminalId} />
+      </div>
+    </div>
+  );
+}
+```
+
+The title bar is compact (~24px tall), styled like VS Code's terminal tab headers. The `terminal-content` div takes remaining height via `flex: 1`. FitAddon measures this inner container so the title bar doesn't eat into xterm's row count.
 
 ### Tree Utilities (`lib/tree-utils.ts`)
 
@@ -255,20 +290,19 @@ Debounce `resizePty` calls (50-100ms) during split drag to avoid flooding the PT
 
 ### Native Module Handling
 
-`node-pty` requires compilation against Electron's Node.js version:
-- Use `@electron/rebuild` in postinstall
-- `asarUnpack: ["node_modules/node-pty/**"]` in electron-builder config
+`node-pty` 1.0 ships **prebuilt binaries** for win32-x64 that are compatible with Electron 35's Node 22 — no `@electron/rebuild` needed for development. For production packaging:
+- `asarUnpack: ["node_modules/node-pty/**"]` in electron-builder config (native .node files can't be inside asar)
 
 ---
 
 ## Implementation Phases
 
-### Phase 1: Scaffold + Single Terminal
-- Init project with `npm create electron-vite@latest` (react-ts template)
-- Implement `pty-manager.ts`, `ipc-handlers.ts`, preload bridge
+### Phase 1: Scaffold + Single Terminal [COMPLETE]
+- Manually scaffolded electron-vite project (React + TypeScript)
+- Implemented `pty-manager.ts`, `ipc-handlers.ts`, preload bridge
 - Minimal `TerminalInstance.tsx` wired to IPC
-- Rebuild node-pty for Electron
-- **Verify**: App launches, PowerShell prompt works, typing & output functional
+- node-pty prebuilds work with Electron out of the box (no rebuild needed)
+- **Verified**: App launches, PowerShell prompt works, typing & output functional
 
 ### Phase 2: Multiple Terminals + Sidebar
 - Define types, implement Zustand store (terminals map, CRUD actions)
@@ -280,11 +314,12 @@ Debounce `resizePty` calls (50-100ms) during split drag to avoid flooding the PT
 ### Phase 3: Split Panes
 - Install `allotment`, implement `tree-utils.ts`
 - Update store to use `SplitNode` tree per group
-- Build recursive `SplitContainer.tsx`
-- Split actions (context menu or shortcuts): "Split Right" / "Split Down"
-- Wire `FitAddon.fit()` on resize, handle terminal removal from splits
+- Build `TerminalPane.tsx` — wrapper with title bar (terminal name, focus highlight, split/close action buttons) + `TerminalInstance` below it
+- Build recursive `SplitContainer.tsx` (leaf nodes render `<TerminalPane>`)
+- Split actions via title bar buttons and/or keyboard shortcuts: "Split Right" / "Split Down"
+- Wire `FitAddon.fit()` on resize (measure inner `terminal-content` div, not the full pane), handle terminal removal from splits
 - Focus tracking via `terminal.onFocus`
-- **Verify**: Nest H+V splits, resize dividers, remove terminals from splits
+- **Verify**: Nest H+V splits, each pane shows its title, resize dividers work, remove terminals from splits
 
 ### Phase 4: Terminal Groups / Tabs
 - Build `TerminalTabs.tsx`, update store with `groups` array
@@ -311,7 +346,7 @@ Debounce `resizePty` calls (50-100ms) during split drag to avoid flooding the PT
 
 | Challenge | Mitigation |
 |-----------|------------|
-| node-pty native module rebuild | `@electron/rebuild` in postinstall, `asarUnpack` for node-pty |
+| node-pty production packaging | `asarUnpack` for node-pty native files in electron-builder config |
 | Resize flood during split drag | Debounce `resizePty` (50-100ms), batch `fitAddon.fit()` |
 | Memory with many terminals | Default scrollback limit (5000 lines) |
 | Focus management | Use xterm's `terminal.onFocus` event to update store |
@@ -334,6 +369,7 @@ After each phase, verify by:
 - `src/main/pty-manager.ts` — PTY lifecycle, the bridge between node-pty and IPC
 - `src/renderer/store/terminal-store.ts` — All terminal/group/split state + actions
 - `src/renderer/components/SplitPane/SplitContainer.tsx` — Recursive split tree renderer
+- `src/renderer/components/Terminal/TerminalPane.tsx` — Title bar + terminal wrapper for each split pane
 - `src/renderer/components/Terminal/TerminalInstance.tsx` — xterm.js lifecycle + IPC piping
 - `src/preload/index.ts` — Typed contract between main and renderer
 - `src/renderer/lib/tree-utils.ts` — Split tree manipulation helpers

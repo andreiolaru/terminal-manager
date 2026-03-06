@@ -1,0 +1,13 @@
+appId: com.personal.terminal-manager
+productName: Terminal Manager
+directories:
+  buildResources: resources
+  output: dist
+files:
+  - out/**/*
+win:
+  target: dir
+  icon: resources/icon.ico
+asar: true
+asarUnpack:
+  - node_modules/node-pty/**

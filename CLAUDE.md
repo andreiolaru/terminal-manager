@@ -72,8 +72,8 @@ src/
 
 Current progress is tracked here. Update as phases complete:
 
-- [ ] **Phase 1**: Scaffold + single terminal working
-- [ ] **Phase 2**: Multiple terminals + sidebar
+- [x] **Phase 1**: Scaffold + single terminal working
+- [x] **Phase 2**: Multiple terminals + sidebar
 - [ ] **Phase 3**: Split panes (allotment + recursive tree)
 - [ ] **Phase 4**: Terminal groups / tabs
 - [ ] **Phase 5**: Polish + keyboard shortcuts

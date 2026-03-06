@@ -1,0 +1,122 @@
+.sidebar {
+  width: 220px;
+  min-width: 220px;
+  height: 100%;
+  background: #252526;
+  border-right: 1px solid #3c3c3c;
+  display: flex;
+  flex-direction: column;
+  user-select: none;
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid #3c3c3c;
+}
+
+.sidebar-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #bbbbbb;
+}
+
+.sidebar-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.sidebar-btn {
+  background: none;
+  border: none;
+  color: #cccccc;
+  font-size: 18px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 4px;
+  line-height: 1;
+}
+
+.sidebar-btn:hover {
+  background: #3c3c3c;
+}
+
+.terminal-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.terminal-list-item {
+  display: flex;
+  align-items: center;
+  padding: 4px 12px;
+  cursor: pointer;
+  gap: 4px;
+}
+
+.terminal-list-item:hover {
+  background: #2a2d2e;
+}
+
+.terminal-list-item.active {
+  background: #37373d;
+}
+
+.terminal-list-item.dead .terminal-list-item-title {
+  opacity: 0.5;
+  text-decoration: line-through;
+}
+
+.terminal-list-item-title {
+  flex: 1;
+  font-size: 13px;
+  color: #cccccc;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.terminal-rename-input {
+  flex: 1;
+  background: #3c3c3c;
+  border: 1px solid #007acc;
+  color: #cccccc;
+  font-size: 13px;
+  padding: 1px 4px;
+  outline: none;
+  border-radius: 2px;
+  font-family: inherit;
+}
+
+.terminal-close-btn {
+  background: none;
+  border: none;
+  color: #cccccc;
+  font-size: 16px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 4px;
+  opacity: 0;
+  line-height: 1;
+}
+
+.terminal-list-item:hover .terminal-close-btn {
+  opacity: 1;
+}
+
+.terminal-close-btn:hover {
+  background: #b13a3a;
+}

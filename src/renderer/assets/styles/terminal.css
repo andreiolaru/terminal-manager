@@ -1,0 +1,33 @@
+.terminal-panel {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.terminal-panel-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #666666;
+  font-size: 14px;
+}
+
+.terminal-container {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.terminal-container .xterm {
+  height: 100%;
+  padding: 4px;
+}
+
+.main-layout {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
