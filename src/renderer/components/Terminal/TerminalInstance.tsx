@@ -16,6 +16,14 @@ interface TerminalInstanceProps {
   isActive: boolean
 }
 
+// Persists terminal instances across unmount/remount cycles during split operations.
+// When a split changes the React tree structure, the old component unmounts and a new one
+// mounts for the same terminalId. This map preserves the xterm + PTY session across that gap.
+const persistedTerminals = new Map<string, {
+  terminal: Terminal
+  fitAddon: FitAddon
+}>()
+
 export default function TerminalInstance({ terminalId, isVisible, isActive }: TerminalInstanceProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const terminalRef = useRef<Terminal | null>(null)
@@ -26,103 +34,127 @@ export default function TerminalInstance({ terminalId, isVisible, isActive }: Te
   useEffect(() => {
     if (!containerRef.current) return
 
-    const terminal = new Terminal({
-      cursorBlink: true,
-      fontSize: defaultConfig.font.size,
-      fontFamily: defaultConfig.font.family,
-      theme: {
-        background: defaultConfig.theme.background,
-        foreground: defaultConfig.theme.foreground,
-        cursor: defaultConfig.theme.cursor,
-        selectionBackground: defaultConfig.theme.selectionBackground
-      },
-      scrollback: defaultConfig.scrollback
-    })
+    const persisted = persistedTerminals.get(terminalId)
+    let terminal: Terminal
+    let fitAddon: FitAddon
+    let isReattach = false
 
-    const fitAddon = new FitAddon()
-    terminal.loadAddon(fitAddon)
+    if (persisted) {
+      // Reattach existing terminal — preserves PTY session and scrollback
+      terminal = persisted.terminal
+      fitAddon = persisted.fitAddon
+      persistedTerminals.delete(terminalId)
+      isReattach = true
 
-    terminal.attachCustomKeyEventHandler((e) => {
-      // Let Electron menu accelerators handle these combos
-      if (e.type !== 'keydown') return true
-      if (e.ctrlKey && e.shiftKey && ['T', 'W', 'D', 'E'].includes(e.key)) return false
-      if (e.ctrlKey && !e.shiftKey && e.key === 'b') return false
-      if (e.ctrlKey && e.key === 'Tab') return false
-      if (e.altKey && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) return false
-      return true
-    })
-
-    terminal.open(containerRef.current)
-
-    try {
-      const webgl = new WebglAddon()
-      webgl.onContextLoss(() => {
-        webgl.dispose()
-        console.warn('WebGL context lost, falling back to canvas renderer')
+      // Move the xterm DOM element into the new container
+      if (terminal.element) {
+        containerRef.current.appendChild(terminal.element)
+      }
+    } else {
+      // Create new terminal instance
+      terminal = new Terminal({
+        cursorBlink: true,
+        fontSize: defaultConfig.font.size,
+        fontFamily: defaultConfig.font.family,
+        theme: {
+          background: defaultConfig.theme.background,
+          foreground: defaultConfig.theme.foreground,
+          cursor: defaultConfig.theme.cursor,
+          selectionBackground: defaultConfig.theme.selectionBackground
+        },
+        scrollback: defaultConfig.scrollback
       })
-      terminal.loadAddon(webgl)
-    } catch {
-      console.warn('WebGL addon failed to load, using canvas renderer')
+
+      fitAddon = new FitAddon()
+      terminal.loadAddon(fitAddon)
+
+      terminal.attachCustomKeyEventHandler((e) => {
+        // Let Electron menu accelerators handle these combos
+        if (e.type !== 'keydown') return true
+        if (e.ctrlKey && e.shiftKey && ['T', 'W', 'D', 'E'].includes(e.key)) return false
+        if (e.ctrlKey && !e.shiftKey && e.key === 'b') return false
+        if (e.ctrlKey && e.key === 'Tab') return false
+        if (e.altKey && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) return false
+        return true
+      })
+
+      terminal.open(containerRef.current)
+
+      try {
+        const webgl = new WebglAddon()
+        webgl.onContextLoss(() => {
+          webgl.dispose()
+          console.warn('WebGL context lost, falling back to canvas renderer')
+        })
+        terminal.loadAddon(webgl)
+      } catch {
+        console.warn('WebGL addon failed to load, using canvas renderer')
+      }
     }
 
     fitAddon.fit()
     terminalRef.current = terminal
     fitAddonRef.current = fitAddon
 
-    // Register with centralized dispatcher for O(1) IPC routing
-    registerTerminal(terminalId, terminal, (exitCode) => {
-      terminal.write(`\r\n\x1b[90m[Process exited with code ${exitCode}]\x1b[0m\r\n`)
-    })
+    // Capture claude flag at mount time for cleanup
+    const isClaudeTerminal = useTerminalStore.getState().terminals[terminalId]?.claudeCode ?? false
 
-    const terminalInfo = useTerminalStore.getState().terminals[terminalId]
-    const initialTitle = terminalInfo?.title ?? ''
-    const startupCommand = terminalInfo?.startupCommand
+    if (!isReattach) {
+      // Only set up PTY and data handlers for new terminals
+      registerTerminal(terminalId, terminal, (exitCode) => {
+        terminal.write(`\r\n\x1b[90m[Process exited with code ${exitCode}]\x1b[0m\r\n`)
+      })
 
-    ipcApi.createPty({
-      id: terminalId,
-      shell: terminalInfo?.shell,
-      cwd: terminalInfo?.cwd || undefined,
-      cols: terminal.cols,
-      rows: terminal.rows
-    }).catch((err) => {
-      terminal.write(`\r\n\x1b[91m[Failed to start terminal: ${err instanceof Error ? err.message : String(err)}]\x1b[0m\r\n`)
-    })
+      const terminalInfo = useTerminalStore.getState().terminals[terminalId]
+      const initialTitle = terminalInfo?.title ?? ''
+      const startupCommand = terminalInfo?.startupCommand
 
-    if (terminalInfo?.claudeCode) {
-      ipcApi.registerClaude(terminalId)
-    }
+      ipcApi.createPty({
+        id: terminalId,
+        shell: terminalInfo?.shell,
+        cwd: terminalInfo?.cwd || undefined,
+        cols: terminal.cols,
+        rows: terminal.rows
+      }).catch((err) => {
+        terminal.write(`\r\n\x1b[91m[Failed to start terminal: ${err instanceof Error ? err.message : String(err)}]\x1b[0m\r\n`)
+      })
 
-    if (startupCommand) {
-      registerFirstDataCallback(terminalId, () => {
-        setTimeout(() => {
-          ipcApi.writePty(terminalId, startupCommand + '\r')
-          useTerminalStore.getState().clearStartupCommand(terminalId)
-        }, 100)
+      if (isClaudeTerminal) {
+        ipcApi.registerClaude(terminalId)
+      }
+
+      if (startupCommand) {
+        registerFirstDataCallback(terminalId, () => {
+          setTimeout(() => {
+            ipcApi.writePty(terminalId, startupCommand + '\r')
+            useTerminalStore.getState().clearStartupCommand(terminalId)
+          }, 100)
+        })
+      }
+
+      let inputBuffer = ''
+      terminal.onData((data) => {
+        ipcApi.writePty(terminalId, data)
+
+        // Strip escape sequences (CSI, SS3, simple ESC) before tracking input
+        const cleaned = data.replace(/\x1b\[[0-9;?]*[A-Za-z]/g, '')
+          .replace(/\x1bO[A-Za-z]/g, '')
+          .replace(/\x1b./g, '')
+        for (const ch of cleaned) {
+          if (ch === '\r') {
+            const cmd = inputBuffer.trim()
+            if (cmd) {
+              useTerminalStore.getState().renameTerminal(terminalId, `${initialTitle} - ${cmd}`)
+            }
+            inputBuffer = ''
+          } else if (ch === '\x7f' || ch === '\b') {
+            inputBuffer = inputBuffer.slice(0, -1)
+          } else if (ch >= ' ') {
+            inputBuffer += ch
+          }
+        }
       })
     }
-
-    let inputBuffer = ''
-    const onDataDisposable = terminal.onData((data) => {
-      ipcApi.writePty(terminalId, data)
-
-      // Strip escape sequences (CSI, SS3, simple ESC) before tracking input
-      const cleaned = data.replace(/\x1b\[[0-9;?]*[A-Za-z]/g, '')
-        .replace(/\x1bO[A-Za-z]/g, '')
-        .replace(/\x1b./g, '')
-      for (const ch of cleaned) {
-        if (ch === '\r') {
-          const cmd = inputBuffer.trim()
-          if (cmd) {
-            useTerminalStore.getState().renameTerminal(terminalId, `${initialTitle} - ${cmd}`)
-          }
-          inputBuffer = ''
-        } else if (ch === '\x7f' || ch === '\b') {
-          inputBuffer = inputBuffer.slice(0, -1)
-        } else if (ch >= ' ') {
-          inputBuffer += ch
-        }
-      }
-    })
 
     // Debounce resize events; skip when hidden (display:none → 0×0 kills PTY)
     let resizeTimer: ReturnType<typeof setTimeout> | null = null
@@ -149,13 +181,20 @@ export default function TerminalInstance({ terminalId, isVisible, isActive }: Te
       if (resizeTimer) clearTimeout(resizeTimer)
       if (rafId !== null) cancelAnimationFrame(rafId)
       resizeObserver.disconnect()
-      onDataDisposable.dispose()
-      if (terminalInfo?.claudeCode) {
-        ipcApi.unregisterClaude(terminalId)
+
+      // If terminal still exists in store, this is a tree restructure (split) — persist for reattach
+      const stillInStore = !!useTerminalStore.getState().terminals[terminalId]
+      if (stillInStore) {
+        persistedTerminals.set(terminalId, { terminal, fitAddon })
+      } else {
+        // Terminal was removed — full cleanup
+        if (isClaudeTerminal) {
+          ipcApi.unregisterClaude(terminalId)
+        }
+        unregisterTerminal(terminalId)
+        terminal.dispose()
+        ipcApi.destroyPty(terminalId).catch(() => {})
       }
-      unregisterTerminal(terminalId)
-      terminal.dispose()
-      ipcApi.destroyPty(terminalId).catch(() => {})
     }
   }, [terminalId])
 
