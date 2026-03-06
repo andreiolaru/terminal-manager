@@ -35,9 +35,15 @@ export interface TerminalGroup {
 
 export interface TerminalState {
   terminals: Record<TerminalId, TerminalInfo>
-  activeTerminalId: TerminalId | null
+  groups: TerminalGroup[]
+  activeGroupId: string | null
   nextTerminalNumber: number
-  splitTree: SplitNode | null
+  nextGroupNumber: number
+
+  addGroup: () => string
+  removeGroup: (groupId: string) => void
+  setActiveGroup: (groupId: string) => void
+  renameGroup: (groupId: string, label: string) => void
 
   addTerminal: () => TerminalId
   removeTerminal: (id: TerminalId) => void

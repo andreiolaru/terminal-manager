@@ -1,13 +1,20 @@
 import { useTerminalStore } from '../../store/terminal-store'
+import { collectLeafIds } from '../../lib/tree-utils'
 import TerminalListItem from './TerminalListItem'
 
 export default function TerminalList() {
   const terminals = useTerminalStore((s) => s.terminals)
-  const activeTerminalId = useTerminalStore((s) => s.activeTerminalId)
+  const groups = useTerminalStore((s) => s.groups)
+  const activeGroupId = useTerminalStore((s) => s.activeGroupId)
 
-  const sortedTerminals = Object.values(terminals).sort(
-    (a, b) => a.createdAt - b.createdAt
-  )
+  const activeGroup = groups.find((g) => g.id === activeGroupId)
+  const groupTerminalIds = activeGroup ? collectLeafIds(activeGroup.splitTree) : []
+  const activeTerminalId = activeGroup?.activeTerminalId ?? null
+
+  const sortedTerminals = groupTerminalIds
+    .map((id) => terminals[id])
+    .filter(Boolean)
+    .sort((a, b) => a.createdAt - b.createdAt)
 
   return (
     <div className="terminal-list" role="listbox" aria-label="Terminal sessions">

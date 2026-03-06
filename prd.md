@@ -49,7 +49,8 @@ terminal-manager/
 │       │   ├── global.css
 │       │   ├── sidebar.css
 │       │   ├── terminal.css
-│       │   └── splitpane.css
+│       │   ├── splitpane.css
+│       │   └── tabs.css
 │       ├── components/
 │       │   ├── Sidebar/
 │       │   │   ├── Sidebar.tsx
@@ -163,7 +164,23 @@ interface TerminalGroup {
 interface TerminalState {
   terminals: Record<TerminalId, TerminalInfo>;
   groups: TerminalGroup[];
-  activeGroupId: string;
+  activeGroupId: string | null;  // null when no groups exist
+  nextTerminalNumber: number;
+  nextGroupNumber: number;
+
+  // Group actions
+  addGroup: () => string;
+  removeGroup: (groupId: string) => void;
+  setActiveGroup: (groupId: string) => void;
+  renameGroup: (groupId: string, label: string) => void;
+
+  // Terminal actions (group-aware)
+  addTerminal: () => TerminalId;
+  removeTerminal: (id: TerminalId) => void;
+  splitTerminal: (id: TerminalId, direction: SplitDirection) => void;
+  setActiveTerminal: (id: TerminalId) => void;
+  renameTerminal: (id: TerminalId, title: string) => void;
+  setTerminalDead: (id: TerminalId) => void;
 }
 ```
 
@@ -196,7 +213,7 @@ interface TerminalState {
     │       └── <TerminalListItem />  // click=focus, dbl-click=rename, x=close
     └── <TerminalPanel>
         ├── <TerminalTabs />          // One tab per group
-        └── <SplitContainer node={activeGroup.splitTree}>
+        └── <SplitContainer node={activeGroup.splitTree} groupId={activeGroup.id}>
             // Recursive:
             // leaf  → <TerminalPane>        // wrapper with title bar
             //             <TerminalTitleBar />  // shows terminal title + split/close buttons
@@ -208,17 +225,17 @@ interface TerminalState {
 ### Split Rendering (recursive)
 
 ```tsx
-function SplitContainer({ node }: { node: SplitNode }) {
+function SplitContainer({ node, groupId }: { node: SplitNode; groupId: string }) {
   if (node.type === 'leaf') {
-    return <TerminalPane terminalId={node.terminalId} />;
+    return <TerminalPane terminalId={node.terminalId} groupId={groupId} />;
   }
   return (
     <Allotment vertical={node.direction === 'vertical'}>
       <Allotment.Pane>
-        <SplitContainer node={node.first} />
+        <SplitContainer node={node.first} groupId={groupId} />
       </Allotment.Pane>
       <Allotment.Pane>
-        <SplitContainer node={node.second} />
+        <SplitContainer node={node.second} groupId={groupId} />
       </Allotment.Pane>
     </Allotment>
   );
@@ -234,9 +251,9 @@ Each terminal in a split has a **title bar** at the top showing:
 
 ```tsx
 // TerminalPane.tsx — wraps each terminal leaf in the split tree
-function TerminalPane({ terminalId }: { terminalId: TerminalId }) {
+function TerminalPane({ terminalId, groupId }: { terminalId: TerminalId; groupId: string }) {
   const title = useTerminalStore(s => s.terminals[terminalId]?.title);
-  const isActive = useTerminalStore(s => /* activeTerminalId === terminalId */);
+  const isActive = useTerminalStore(s => s.groups.find(g => g.id === groupId)?.activeTerminalId === terminalId);
 
   return (
     <div className={`terminal-pane ${isActive ? 'active' : ''}`}>
@@ -258,9 +275,10 @@ The title bar is compact (~24px tall), styled like VS Code's terminal tab header
 
 ### Tree Utilities (`lib/tree-utils.ts`)
 
-- **`splitNode(tree, targetId, direction)`** → replaces leaf with branch containing original + new leaf
+- **`splitNode(tree, targetId, direction, newTerminalId)`** → replaces leaf with branch containing original + new leaf
 - **`removeNode(tree, targetId)`** → replaces parent branch with surviving sibling
-- **`findNode(tree, targetId)`** → locate a leaf in the tree
+- **`collectLeafIds(tree)`** → returns flat array of all terminal IDs in tree
+- **`containsLeaf(tree, terminalId)`** → checks if a terminal exists in the tree
 
 ---
 
@@ -304,14 +322,14 @@ Debounce `resizePty` calls (50-100ms) during split drag to avoid flooding the PT
 - node-pty prebuilds work with Electron out of the box (no rebuild needed)
 - **Verified**: App launches, PowerShell prompt works, typing & output functional
 
-### Phase 2: Multiple Terminals + Sidebar
+### Phase 2: Multiple Terminals + Sidebar [COMPLETE]
 - Define types, implement Zustand store (terminals map, CRUD actions)
 - Build `MainLayout`, `Sidebar`, `TerminalList`, `TerminalListItem`, `SidebarActions`
 - Terminal switching via sidebar (active shown, others `display: none`)
 - Add/remove terminals, double-click-to-rename, PTY exit handling
 - **Verify**: Create multiple terminals, switch between them, close them
 
-### Phase 3: Split Panes
+### Phase 3: Split Panes [COMPLETE]
 - Install `allotment`, implement `tree-utils.ts`
 - Update store to use `SplitNode` tree per group
 - Build `TerminalPane.tsx` — wrapper with title bar (terminal name, focus highlight, split/close action buttons) + `TerminalInstance` below it
@@ -321,18 +339,22 @@ Debounce `resizePty` calls (50-100ms) during split drag to avoid flooding the PT
 - Focus tracking via `terminal.onFocus`
 - **Verify**: Nest H+V splits, each pane shows its title, resize dividers work, remove terminals from splits
 
-### Phase 4: Terminal Groups / Tabs
+### Phase 4: Terminal Groups / Tabs [COMPLETE]
 - Build `TerminalTabs.tsx`, update store with `groups` array
 - Each group has independent `splitTree` and `activeTerminalId`
 - Group switching preserves terminals via CSS hiding
 - New Group / Close Group actions
-- **Verify**: Multiple groups, independent layouts, switching preserves state
+- Sidebar filters terminal list to active group only (clicking a terminal in another group auto-switches)
+- Closing the last terminal in a group removes the group (moved from Phase 5 scope)
+- All groups' SplitContainers rendered simultaneously, inactive hidden via CSS `display: none` + absolute positioning
+- `TerminalPane` receives `groupId` prop for per-group `isActive`/`isVisible` selectors
+- **Verified**: Groups created/switched/closed, independent split layouts, scrollback preserved across switches
 
 ### Phase 5: Polish + Keyboard Shortcuts
 - Shortcuts: `Ctrl+Shift+T` (new), `Ctrl+Shift+W` (close), `Ctrl+Shift+D` (split right), `Ctrl+Shift+E` (split down), `Ctrl+Tab` (cycle groups), `Alt+Arrow` (navigate panes)
 - Sidebar styling (hover, active indicator, dead terminal)
 - Focused pane border highlight
-- Edge cases: last terminal closes group, last group creates default, window title tracks active terminal
+- Edge cases: last group creates default, window title tracks active terminal
 - **Verify**: Full keyboard-driven workflow, polish feels right
 
 ### Phase 6: Extensibility Hooks (Future-proofing)

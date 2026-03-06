@@ -4,7 +4,7 @@ import { useTerminalStore } from './store/terminal-store'
 import { usePtyIpc } from './hooks/usePtyIpc'
 
 function App() {
-  const addTerminal = useTerminalStore((s) => s.addTerminal)
+  const addGroup = useTerminalStore((s) => s.addGroup)
   const didInit = useRef(false)
 
   usePtyIpc()
@@ -12,9 +12,9 @@ function App() {
   useEffect(() => {
     if (!didInit.current) {
       didInit.current = true
-      addTerminal()
+      addGroup()
     }
-  }, [addTerminal])
+  }, [addGroup])
 
   return <MainLayout />
 }

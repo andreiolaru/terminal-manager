@@ -20,7 +20,13 @@ vi.mock('../TerminalListItem', () => ({
 
 describe('TerminalList', () => {
   beforeEach(() => {
-    useTerminalStore.setState({ terminals: {}, activeTerminalId: null })
+    useTerminalStore.setState({
+      terminals: {},
+      groups: [],
+      activeGroupId: null,
+      nextTerminalNumber: 1,
+      nextGroupNumber: 1
+    })
   })
 
   it('renders no items when store is empty', () => {
@@ -56,7 +62,27 @@ describe('TerminalList', () => {
           createdAt: 300
         }
       },
-      activeTerminalId: 'a'
+      groups: [
+        {
+          id: 'g1',
+          label: 'Group 1',
+          splitTree: {
+            type: 'branch',
+            direction: 'horizontal',
+            first: {
+              type: 'branch',
+              direction: 'horizontal',
+              first: { type: 'leaf', terminalId: 'a' },
+              second: { type: 'leaf', terminalId: 'b' },
+              ratio: 0.5
+            },
+            second: { type: 'leaf', terminalId: 'c' },
+            ratio: 0.5
+          },
+          activeTerminalId: 'a'
+        }
+      ],
+      activeGroupId: 'g1'
     })
 
     render(<TerminalList />)
@@ -86,7 +112,21 @@ describe('TerminalList', () => {
           createdAt: 200
         }
       },
-      activeTerminalId: 'y'
+      groups: [
+        {
+          id: 'g1',
+          label: 'Group 1',
+          splitTree: {
+            type: 'branch',
+            direction: 'horizontal',
+            first: { type: 'leaf', terminalId: 'x' },
+            second: { type: 'leaf', terminalId: 'y' },
+            ratio: 0.5
+          },
+          activeTerminalId: 'y'
+        }
+      ],
+      activeGroupId: 'g1'
     })
 
     render(<TerminalList />)
@@ -108,7 +148,11 @@ describe('TerminalList', () => {
   })
 
   it('re-renders without removed terminal', () => {
-    const id = useTerminalStore.getState().addTerminal()
+    useTerminalStore.getState().addGroup()
+    const s = useTerminalStore.getState()
+    const group = s.groups.find((g) => g.id === s.activeGroupId)!
+    const id = group.activeTerminalId
+
     const { rerender } = render(<TerminalList />)
     expect(screen.queryAllByTestId(/^item-/)).toHaveLength(1)
 

@@ -4,11 +4,15 @@ import '../../assets/styles/splitpane.css'
 
 interface TerminalPaneProps {
   terminalId: string
+  groupId: string
 }
 
-export default function TerminalPane({ terminalId }: TerminalPaneProps) {
+export default function TerminalPane({ terminalId, groupId }: TerminalPaneProps) {
   const title = useTerminalStore((s) => s.terminals[terminalId]?.title ?? '')
-  const isActive = useTerminalStore((s) => s.activeTerminalId === terminalId)
+  const isActive = useTerminalStore(
+    (s) => s.groups.find((g) => g.id === groupId)?.activeTerminalId === terminalId
+  )
+  const isGroupActive = useTerminalStore((s) => s.activeGroupId === groupId)
   const splitTerminal = useTerminalStore((s) => s.splitTerminal)
   const removeTerminal = useTerminalStore((s) => s.removeTerminal)
   const setActiveTerminal = useTerminalStore((s) => s.setActiveTerminal)
@@ -42,7 +46,7 @@ export default function TerminalPane({ terminalId }: TerminalPaneProps) {
         </div>
       </div>
       <div className="terminal-content">
-        <TerminalInstance terminalId={terminalId} isVisible={true} />
+        <TerminalInstance terminalId={terminalId} isVisible={isGroupActive} />
       </div>
     </div>
   )

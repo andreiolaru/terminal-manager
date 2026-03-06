@@ -1,0 +1,101 @@
+.terminal-tabs {
+  display: flex;
+  align-items: center;
+  height: 30px;
+  min-height: 30px;
+  background: #252526;
+  border-bottom: 1px solid #3c3c3c;
+  overflow-x: auto;
+  user-select: none;
+}
+
+.terminal-tab {
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  height: 100%;
+  cursor: pointer;
+  gap: 6px;
+  border-right: 1px solid #3c3c3c;
+  background: #2d2d2d;
+  min-width: 0;
+  flex-shrink: 0;
+}
+
+.terminal-tab.active {
+  background: #1e1e1e;
+  border-bottom: 2px solid #007acc;
+}
+
+.terminal-tab:hover:not(.active) {
+  background: #333333;
+}
+
+.terminal-tab-label {
+  font-size: 12px;
+  color: #999;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.terminal-tab.active .terminal-tab-label {
+  color: #cccccc;
+}
+
+.terminal-tab-rename-input {
+  background: #3c3c3c;
+  border: 1px solid #007acc;
+  color: #cccccc;
+  font-size: 12px;
+  padding: 1px 4px;
+  outline: none;
+  border-radius: 2px;
+  font-family: inherit;
+  width: 80px;
+}
+
+.terminal-tab-close {
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 14px;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 3px;
+  opacity: 0;
+  line-height: 1;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.terminal-tab:hover .terminal-tab-close {
+  opacity: 1;
+}
+
+.terminal-tab-close:hover {
+  background: #b13a3a;
+  color: #ffffff;
+}
+
+.terminal-tab-add {
+  background: none;
+  border: none;
+  color: #cccccc;
+  font-size: 16px;
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.terminal-tab-add:hover {
+  background: #3c3c3c;
+}
