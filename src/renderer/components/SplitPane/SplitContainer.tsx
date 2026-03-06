@@ -16,8 +16,11 @@ const SplitContainer = memo(function SplitContainer({ node, groupId }: SplitCont
     return <TerminalPane terminalId={node.terminalId} groupId={groupId} />
   }
 
+  const firstSize = Math.round(node.ratio * 1000)
+  const secondSize = 1000 - firstSize
+
   return (
-    <Allotment vertical={node.direction === 'vertical'}>
+    <Allotment vertical={node.direction === 'vertical'} defaultSizes={[firstSize, secondSize]}>
       <Allotment.Pane minSize={MIN_PANE_SIZE}>
         <SplitContainer node={node.first} groupId={groupId} />
       </Allotment.Pane>
