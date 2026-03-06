@@ -7,7 +7,7 @@ import type { PtyCreateOptions } from '../shared/ipc-types'
 import type { LayoutTemplate } from '../shared/template-types'
 import type { ClaudeCodeDetector } from './claude-detector'
 
-const ALLOWED_SHELLS = new Set([
+const ALLOWED_SHELLS_WIN = new Set([
   'powershell.exe',
   'pwsh.exe',
   'cmd.exe',
@@ -15,6 +15,31 @@ const ALLOWED_SHELLS = new Set([
   'wsl.exe',
   'git-bash.exe'
 ])
+
+const ALLOWED_SHELLS_POSIX = new Set([
+  '/bin/bash',
+  '/bin/zsh',
+  '/bin/sh',
+  '/usr/bin/bash',
+  '/usr/bin/zsh',
+  '/usr/local/bin/bash',
+  '/usr/local/bin/zsh',
+  '/usr/local/bin/fish',
+  '/opt/homebrew/bin/bash',
+  '/opt/homebrew/bin/zsh',
+  '/opt/homebrew/bin/fish',
+  'bash',
+  'zsh',
+  'sh',
+  'fish'
+])
+
+function isShellAllowed(shell: string): boolean {
+  if (process.platform === 'win32') {
+    return ALLOWED_SHELLS_WIN.has(shell.toLowerCase())
+  }
+  return ALLOWED_SHELLS_POSIX.has(shell)
+}
 
 let templateStorage: TemplateStorage | null = null
 function getTemplateStorage(): TemplateStorage {
@@ -29,11 +54,13 @@ export function registerIpcHandlers(
   ipcMain.handle(
     IPC_CHANNELS.PTY_CREATE,
     async (_, options: PtyCreateOptions) => {
-      const shell = options.shell || 'powershell.exe'
-      if (!ALLOWED_SHELLS.has(shell.toLowerCase())) {
+      const defaultShell = process.platform === 'win32' ? 'powershell.exe' : (process.env.SHELL || '/bin/zsh')
+      const shell = options.shell || defaultShell
+      if (!isShellAllowed(shell)) {
         throw new Error(`Shell not allowed: ${shell}`)
       }
-      const cwd = options.cwd || process.env.USERPROFILE || 'C:\\'
+      const homeDir = process.env.HOME || process.env.USERPROFILE || (process.platform === 'win32' ? 'C:\\' : '/')
+      const cwd = options.cwd || homeDir
       if (!existsSync(cwd)) {
         throw new Error(`Working directory does not exist: ${cwd}`)
       }

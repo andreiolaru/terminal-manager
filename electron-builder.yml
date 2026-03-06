@@ -8,6 +8,12 @@ files:
 win:
   target: dir
   icon: resources/icon.ico
+  signAndEditExecutable: false
+mac:
+  target: dir
+  icon: resources/icon.icns
+  category: public.app-category.developer-tools
+npmRebuild: false
 asar: true
 asarUnpack:
   - node_modules/node-pty/**

@@ -1,6 +1,6 @@
 # Terminal Manager
 
-A VS Code-style integrated terminal manager for Windows, built with Electron, React, and xterm.js. Run multiple shells in split panes, organize them into tabbed groups, and save layouts as reusable templates.
+A VS Code-style integrated terminal manager for Windows and macOS, built with Electron, React, and xterm.js. Run multiple shells in split panes, organize them into tabbed groups, and save layouts as reusable templates.
 
 ## Features
 
@@ -18,7 +18,9 @@ pnpm install
 pnpm run dev
 ```
 
-Requires Node.js 18+ and a C++ build toolchain for node-pty (Visual Studio Build Tools on Windows).
+Requires Node.js 18+ and a C++ build toolchain for node-pty:
+- **Windows** — Visual Studio Build Tools
+- **macOS** — Xcode Command Line Tools (`xcode-select --install`)
 
 ## Tech Stack
 

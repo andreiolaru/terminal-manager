@@ -143,7 +143,7 @@ function createWindow(): void {
         { label: 'New Terminal', click: (): void => sendShortcut('new-terminal') },
         { label: 'Close Terminal', click: (): void => sendShortcut('close-terminal') },
         { type: 'separator' },
-        { label: 'Quit', accelerator: 'Alt+F4', click: (): void => mainWindow.close() },
+        { label: 'Quit', accelerator: process.platform === 'darwin' ? 'CmdOrCtrl+Q' : 'Alt+F4', click: (): void => mainWindow.close() },
       ],
     },
     {
@@ -205,5 +205,8 @@ app.on('before-quit', (event) => {
 })
 
 app.on('window-all-closed', () => {
-  app.quit()
+  // On macOS, apps typically stay running until Cmd+Q
+  if (process.platform !== 'darwin') {
+    app.quit()
+  }
 })

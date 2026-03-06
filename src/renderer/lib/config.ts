@@ -40,9 +40,13 @@ export interface TerminalConfig {
   }
 }
 
+const isWindows = typeof navigator !== 'undefined'
+  ? navigator.userAgent.includes('Windows')
+  : process.platform === 'win32'
+
 export const defaultConfig: TerminalConfig = {
   shell: {
-    default: 'powershell.exe'
+    default: isWindows ? 'powershell.exe' : 'zsh'
   },
   font: {
     family: "'Cascadia Code', 'Consolas', monospace",
