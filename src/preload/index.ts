@@ -120,7 +120,28 @@ const electronAPI = {
 
   cancelAppClose(): void {
     ipcRenderer.send(IPC_CHANNELS.APP_CLOSE_CANCELLED)
-  }
+  },
+
+  windowMinimize(): void {
+    ipcRenderer.send(IPC_CHANNELS.WINDOW_MINIMIZE)
+  },
+
+  windowMaximize(): void {
+    ipcRenderer.send(IPC_CHANNELS.WINDOW_MAXIMIZE)
+  },
+
+  windowClose(): void {
+    ipcRenderer.send(IPC_CHANNELS.WINDOW_CLOSE)
+  },
+
+  windowIsMaximized(): Promise<boolean> {
+    return ipcRenderer.invoke(IPC_CHANNELS.WINDOW_IS_MAXIMIZED)
+  },
+
+  windowMenuAction(action: string): void {
+    ipcRenderer.send(IPC_CHANNELS.WINDOW_MENU_ACTION, action)
+  },
+
 }
 
 contextBridge.exposeInMainWorld('electronAPI', electronAPI)

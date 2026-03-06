@@ -115,19 +115,66 @@ export function registerIpcHandlers(
     async (event, title: string, message: string, detail: string): Promise<boolean> => {
       const win = BrowserWindow.fromWebContents(event.sender)
       if (!win) return true
-      const { response } = await dialog.showMessageBox(win, {
-        type: 'warning',
-        buttons: ['Force Close', 'Cancel'],
-        defaultId: 1,
-        cancelId: 1,
-        noLink: true,
-        title,
-        message,
-        detail,
-      })
-      return response === 0
+      win.setAlwaysOnTop(true)
+      try {
+        const { response } = await dialog.showMessageBox(win, {
+          type: 'warning',
+          buttons: ['Force Close', 'Cancel'],
+          defaultId: 1,
+          cancelId: 1,
+          noLink: true,
+          title,
+          message,
+          detail,
+        })
+        return response === 0
+      } finally {
+        win.setAlwaysOnTop(false)
+      }
     }
   )
+
+  ipcMain.on(IPC_CHANNELS.WINDOW_MINIMIZE, (event) => {
+    BrowserWindow.fromWebContents(event.sender)?.minimize()
+  })
+
+  ipcMain.on(IPC_CHANNELS.WINDOW_MAXIMIZE, (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    if (win?.isMaximized()) win.unmaximize()
+    else win?.maximize()
+  })
+
+  ipcMain.on(IPC_CHANNELS.WINDOW_CLOSE, (event) => {
+    BrowserWindow.fromWebContents(event.sender)?.close()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.WINDOW_IS_MAXIMIZED, (event) => {
+    return BrowserWindow.fromWebContents(event.sender)?.isMaximized() ?? false
+  })
+
+  ipcMain.on(IPC_CHANNELS.WINDOW_MENU_ACTION, (event, action: string) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    if (!win) return
+    if (action.startsWith('shortcut:')) {
+      win.webContents.send(action)
+      return
+    }
+    switch (action) {
+      case 'zoom-in': win.webContents.setZoomLevel(win.webContents.getZoomLevel() + 0.5); break
+      case 'zoom-out': win.webContents.setZoomLevel(win.webContents.getZoomLevel() - 0.5); break
+      case 'zoom-reset': win.webContents.setZoomLevel(0); break
+      case 'toggle-devtools': win.webContents.toggleDevTools(); break
+      case 'about':
+        win.setAlwaysOnTop(true)
+        dialog.showMessageBox(win, {
+          type: 'info',
+          title: 'About Terminal Manager',
+          message: 'Terminal Manager',
+          detail: 'A VS Code-style integrated terminal manager.\nBuilt with Electron + React + xterm.js.\nBy Andrei Olaru',
+        }).finally(() => win.setAlwaysOnTop(false))
+        break
+    }
+  })
 
   ipcMain.on(IPC_CHANNELS.CLAUDE_REGISTER, (_, id: string) => {
     detector?.register(id)

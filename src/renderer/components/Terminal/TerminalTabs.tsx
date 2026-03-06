@@ -144,14 +144,6 @@ export default function TerminalTabs() {
           </div>
         ))}
       </div>
-      <button
-        className="terminal-tab-add"
-        onClick={addGroup}
-        title="New Group (Ctrl+Tab to cycle)"
-        aria-label="New Group"
-      >
-        +
-      </button>
       <TemplateLauncher onManageTemplates={() => setManagerOpen(true)} />
       {managerOpen && createPortal(
         <TemplateManager onClose={() => setManagerOpen(false)} />,

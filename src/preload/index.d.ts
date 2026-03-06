@@ -24,6 +24,11 @@ export interface ElectronAPI {
   onAppCloseRequested(callback: () => void): () => void
   confirmAppClose(): void
   cancelAppClose(): void
+  windowMinimize(): void
+  windowMaximize(): void
+  windowClose(): void
+  windowIsMaximized(): Promise<boolean>
+  windowMenuAction(action: string): void
 }
 
 declare global {

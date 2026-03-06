@@ -20,6 +20,11 @@ export const IPC_CHANNELS = {
   APP_CLOSE_REQUESTED: 'app:close-requested',
   APP_CLOSE_CONFIRMED: 'app:close-confirmed',
   APP_CLOSE_CANCELLED: 'app:close-cancelled',
+  WINDOW_MINIMIZE: 'window:minimize',
+  WINDOW_MAXIMIZE: 'window:maximize',
+  WINDOW_CLOSE: 'window:close',
+  WINDOW_IS_MAXIMIZED: 'window:is-maximized',
+  WINDOW_MENU_ACTION: 'window:menu-action',
 } as const
 
 export const SHORTCUT_NAMES = [
@@ -34,6 +39,7 @@ export const SHORTCUT_NAMES = [
   'navigate-up',
   'navigate-down',
   'toggle-sidebar',
+  'toggle-titlebar',
 ] as const
 
 export type ShortcutName = (typeof SHORTCUT_NAMES)[number]

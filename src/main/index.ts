@@ -18,6 +18,7 @@ const SHORTCUT_ACCELERATORS: Record<string, string> = {
   'navigate-up': 'Alt+Up',
   'navigate-down': 'Alt+Down',
   'toggle-sidebar': 'CmdOrCtrl+B',
+  'toggle-titlebar': 'CmdOrCtrl+Shift+B',
 }
 
 app.setAppUserModelId('com.terminal-manager.app')
@@ -34,6 +35,7 @@ function createWindow(): void {
   const mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
+    frame: false,
     autoHideMenuBar: true,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -141,41 +143,37 @@ function createWindow(): void {
     viewSubmenu.push({ type: 'separator' }, { role: 'toggleDevTools' })
   }
 
+  // Build submenu templates (reused for both app menu and popup menus)
+  const menuTemplates: Record<string, Electron.MenuItemConstructorOptions[]> = {
+    File: [
+      { label: 'New Terminal', click: (): void => sendShortcut('new-terminal') },
+      { label: 'Close Terminal', click: (): void => sendShortcut('close-terminal') },
+      { type: 'separator' },
+      { label: 'Quit', accelerator: process.platform === 'darwin' ? 'CmdOrCtrl+Q' : 'Alt+F4', click: (): void => mainWindow.close() },
+    ],
+    Edit: [
+      { role: 'copy', accelerator: 'CmdOrCtrl+Shift+C' },
+      { role: 'paste', accelerator: 'CmdOrCtrl+Shift+V' },
+    ],
+    View: viewSubmenu,
+    Help: [
+      {
+        label: 'About Terminal Manager',
+        click: (): void => {
+          dialog.showMessageBox(mainWindow, {
+            type: 'info',
+            title: 'About Terminal Manager',
+            message: 'Terminal Manager',
+            detail: 'A VS Code-style integrated terminal manager.\nBuilt with Electron + React + xterm.js.\nBy Andrei Olaru',
+          })
+        },
+      },
+    ],
+  }
+
   Menu.setApplicationMenu(Menu.buildFromTemplate([
     { label: 'Shortcuts', submenu: shortcutItems },
-    {
-      label: 'File',
-      submenu: [
-        { label: 'New Terminal', click: (): void => sendShortcut('new-terminal') },
-        { label: 'Close Terminal', click: (): void => sendShortcut('close-terminal') },
-        { type: 'separator' },
-        { label: 'Quit', accelerator: process.platform === 'darwin' ? 'CmdOrCtrl+Q' : 'Alt+F4', click: (): void => mainWindow.close() },
-      ],
-    },
-    {
-      label: 'Edit',
-      submenu: [
-        { role: 'copy', accelerator: 'CmdOrCtrl+Shift+C' },
-        { role: 'paste', accelerator: 'CmdOrCtrl+Shift+V' },
-      ],
-    },
-    { label: 'View', submenu: viewSubmenu },
-    {
-      label: 'Help',
-      submenu: [
-        {
-          label: 'About Terminal Manager',
-          click: (): void => {
-            dialog.showMessageBox(mainWindow, {
-              type: 'info',
-              title: 'About Terminal Manager',
-              message: 'Terminal Manager',
-              detail: 'A VS Code-style integrated terminal manager.\nBuilt with Electron + React + xterm.js.\nBy Andrei Olaru',
-            })
-          },
-        },
-      ],
-    },
+    ...Object.entries(menuTemplates).map(([label, submenu]) => ({ label, submenu })),
   ]))
 
   if (process.env.ELECTRON_RENDERER_URL) {

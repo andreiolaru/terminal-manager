@@ -1,0 +1,120 @@
+.titlebar {
+  display: flex;
+  align-items: center;
+  height: 32px;
+  background: var(--tm-titlebar-bg);
+  border-bottom: 1px solid var(--tm-border);
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.titlebar-menus {
+  display: flex;
+  height: 100%;
+  -webkit-app-region: no-drag;
+}
+
+.titlebar-menu-wrapper {
+  position: relative;
+  height: 100%;
+}
+
+.titlebar-menu-item {
+  height: 100%;
+  padding: 0 10px;
+  background: none;
+  border: none;
+  color: var(--tm-text-secondary);
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.titlebar-menu-item:hover,
+.titlebar-menu-item.active {
+  background: var(--tm-hover-bg);
+  color: var(--tm-text-primary);
+}
+
+.titlebar-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 200px;
+  background: var(--tm-sidebar-bg);
+  border: 1px solid var(--tm-border);
+  border-radius: 4px;
+  padding: 4px 0;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.titlebar-dropdown-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 6px 24px 6px 12px;
+  background: none;
+  border: none;
+  color: var(--tm-text-primary);
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.titlebar-dropdown-item:hover {
+  background: var(--tm-accent);
+  color: #ffffff;
+}
+
+.titlebar-dropdown-shortcut {
+  color: var(--tm-text-muted);
+  font-size: 11px;
+  margin-left: 24px;
+}
+
+.titlebar-dropdown-item:hover .titlebar-dropdown-shortcut {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.titlebar-dropdown-separator {
+  height: 1px;
+  margin: 4px 8px;
+  background: var(--tm-border);
+}
+
+.titlebar-drag {
+  flex: 1;
+  height: 100%;
+  -webkit-app-region: drag;
+}
+
+.titlebar-controls {
+  display: flex;
+  height: 100%;
+  -webkit-app-region: no-drag;
+}
+
+.titlebar-btn {
+  width: 46px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--tm-text-secondary);
+  cursor: pointer;
+}
+
+.titlebar-btn:hover {
+  background: var(--tm-hover-bg);
+  color: var(--tm-text-primary);
+}
+
+.titlebar-close:hover {
+  background: var(--tm-danger);
+  color: #ffffff;
+}

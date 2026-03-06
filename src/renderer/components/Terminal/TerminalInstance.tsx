@@ -86,7 +86,7 @@ export default function TerminalInstance({ terminalId, isVisible, isActive }: Te
       terminal.attachCustomKeyEventHandler((e) => {
         // Let Electron menu accelerators handle these combos
         if (e.type !== 'keydown') return true
-        if (e.ctrlKey && e.shiftKey && ['T', 'W', 'D', 'E'].includes(e.key)) return false
+        if (e.ctrlKey && e.shiftKey && ['T', 'W', 'D', 'E', 'B'].includes(e.key)) return false
         if (e.ctrlKey && !e.shiftKey && e.key === 'b') return false
         if (e.ctrlKey && e.key === 'Tab') return false
         if (e.altKey && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) return false

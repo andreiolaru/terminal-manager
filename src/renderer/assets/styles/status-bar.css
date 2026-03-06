@@ -1,19 +1,15 @@
 .status-bar {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
   display: flex;
   align-items: center;
   gap: 2px;
   padding: 0 8px;
   height: 24px;
+  flex-shrink: 0;
   background: var(--tm-sidebar-bg);
   border-top: 1px solid var(--tm-border);
   font-size: 12px;
   user-select: none;
   overflow: hidden;
-  z-index: 100;
 }
 
 .status-bar-item {
@@ -86,6 +82,25 @@
 }
 
 .status-bar-font-size button:hover {
+  background: var(--tm-hover-bg);
+  color: var(--tm-text-primary);
+}
+
+.status-bar-window-btn {
+  background: none;
+  border: none;
+  color: var(--tm-text-muted);
+  font-size: 10px;
+  width: 24px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  margin-left: 4px;
+}
+
+.status-bar-window-btn:hover {
   background: var(--tm-hover-bg);
   color: var(--tm-text-primary);
 }
