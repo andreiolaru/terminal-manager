@@ -46,7 +46,9 @@ export default memo(function TerminalPane({ terminalId, groupId }: TerminalPaneP
             {statusIcons[claudeStatus]}
           </span>
         )}
-        <span className="title">{title}</span>
+        <span className="title" title={title}>
+          {title.length > 30 ? title.slice(0, 30) + '\u2026' : title}
+        </span>
         <div className="terminal-title-actions">
           <button onClick={handleSplitH} title="Split Right (Ctrl+Shift+D)" aria-label="Split Right">
             ⫼

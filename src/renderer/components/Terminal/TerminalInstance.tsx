@@ -46,6 +46,7 @@ export default function TerminalInstance({ terminalId, isVisible, isActive }: Te
       // Let Electron menu accelerators handle these combos
       if (e.type !== 'keydown') return true
       if (e.ctrlKey && e.shiftKey && ['T', 'W', 'D', 'E'].includes(e.key)) return false
+      if (e.ctrlKey && !e.shiftKey && e.key === 'b') return false
       if (e.ctrlKey && e.key === 'Tab') return false
       if (e.altKey && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) return false
       return true
@@ -54,7 +55,12 @@ export default function TerminalInstance({ terminalId, isVisible, isActive }: Te
     terminal.open(containerRef.current)
 
     try {
-      terminal.loadAddon(new WebglAddon())
+      const webgl = new WebglAddon()
+      webgl.onContextLoss(() => {
+        webgl.dispose()
+        console.warn('WebGL context lost, falling back to canvas renderer')
+      })
+      terminal.loadAddon(webgl)
     } catch {
       console.warn('WebGL addon failed to load, using canvas renderer')
     }
@@ -69,6 +75,7 @@ export default function TerminalInstance({ terminalId, isVisible, isActive }: Te
     })
 
     const terminalInfo = useTerminalStore.getState().terminals[terminalId]
+    const initialTitle = terminalInfo?.title ?? ''
     const startupCommand = terminalInfo?.startupCommand
 
     ipcApi.createPty({
@@ -94,8 +101,27 @@ export default function TerminalInstance({ terminalId, isVisible, isActive }: Te
       })
     }
 
+    let inputBuffer = ''
     const onDataDisposable = terminal.onData((data) => {
       ipcApi.writePty(terminalId, data)
+
+      // Strip escape sequences (CSI, SS3, simple ESC) before tracking input
+      const cleaned = data.replace(/\x1b\[[0-9;?]*[A-Za-z]/g, '')
+        .replace(/\x1bO[A-Za-z]/g, '')
+        .replace(/\x1b./g, '')
+      for (const ch of cleaned) {
+        if (ch === '\r') {
+          const cmd = inputBuffer.trim()
+          if (cmd) {
+            useTerminalStore.getState().renameTerminal(terminalId, `${initialTitle} - ${cmd}`)
+          }
+          inputBuffer = ''
+        } else if (ch === '\x7f' || ch === '\b') {
+          inputBuffer = inputBuffer.slice(0, -1)
+        } else if (ch >= ' ') {
+          inputBuffer += ch
+        }
+      }
     })
 
     // Debounce resize events; skip when hidden (display:none → 0×0 kills PTY)

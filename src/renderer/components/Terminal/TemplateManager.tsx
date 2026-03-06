@@ -223,6 +223,12 @@ export default function TemplateManager({ onClose }: TemplateManagerProps) {
             <button className="primary" onClick={handleSaveCurrent} disabled={!activeGroupId || isSaving}>
               Save current layout as template
             </button>
+            <button
+              onClick={() => window.electronAPI.showTemplatesInFolder()}
+              title="Open templates folder in file explorer"
+            >
+              Open folder
+            </button>
           </div>
         )}
       </div>

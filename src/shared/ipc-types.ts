@@ -28,6 +28,7 @@ export const SHORTCUT_NAMES = [
   'navigate-right',
   'navigate-up',
   'navigate-down',
+  'toggle-sidebar',
 ] as const
 
 export type ShortcutName = (typeof SHORTCUT_NAMES)[number]

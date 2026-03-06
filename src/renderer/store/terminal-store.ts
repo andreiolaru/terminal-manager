@@ -28,6 +28,7 @@ export const useTerminalStore = create<TerminalState>()(
     activeGroupId: null,
     nextTerminalNumber: 1,
     nextGroupNumber: 1,
+    sidebarCollapsed: false,
 
     addGroup: (): string => {
       const groupId = uuid()
@@ -312,6 +313,12 @@ export const useTerminalStore = create<TerminalState>()(
           state.terminals[id].claudeStatus = status
           state.terminals[id].claudeStatusTitle = contextTitle
         }
+      })
+    },
+
+    toggleSidebar: (): void => {
+      set((state) => {
+        state.sidebarCollapsed = !state.sidebarCollapsed
       })
     }
   })),

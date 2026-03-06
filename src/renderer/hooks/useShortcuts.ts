@@ -29,6 +29,7 @@ export function useShortcuts(): void {
       ...(['left', 'right', 'up', 'down'] as NavigationDirection[]).map((dir) =>
         onShortcutSafe(`navigate-${dir}`, () => getState().navigatePane(dir))
       ),
+      onShortcutSafe('toggle-sidebar', () => getState().toggleSidebar()),
     ]
 
     return () => unsubscribers.forEach((fn) => fn())

@@ -104,6 +104,73 @@ describe('ClaudeCodeDetector state machine', () => {
     expect(onStatusChange).toHaveBeenCalledWith('t1', 'working', undefined)
   })
 
+  it('transitions to working on OSC title with * prefix', () => {
+    detector.register('t1')
+    onStatusChange.mockClear()
+
+    detector.feed('t1', '\x1b]0;* Jitterbugging\x07')
+    expect(onStatusChange).toHaveBeenCalledWith('t1', 'working', undefined)
+  })
+
+  it('transitions to working on OSC title with ✻ prefix', () => {
+    detector.register('t1')
+    onStatusChange.mockClear()
+
+    detector.feed('t1', '\x1b]0;\u273B Jitterbugging\x07')
+    expect(onStatusChange).toHaveBeenCalledWith('t1', 'working', undefined)
+  })
+
+  it('transitions to working on inline braille spinner in output', () => {
+    detector.register('t1')
+    onStatusChange.mockClear()
+
+    detector.feed('t1', '  \u2807 Thinking...')
+    expect(onStatusChange).toHaveBeenCalledWith('t1', 'working', undefined)
+  })
+
+  it('transitions from working to idle after 2s of silence', () => {
+    detector.register('t1')
+    detector.feed('t1', '\x1b]0;\u273B Working\x07')
+    onStatusChange.mockClear()
+
+    vi.advanceTimersByTime(2000)
+    expect(onStatusChange).toHaveBeenCalledWith('t1', 'idle', undefined)
+  })
+
+  it('resets working silence timer on new data', () => {
+    detector.register('t1')
+    detector.feed('t1', '\x1b]0;\u273B Working\x07')
+    onStatusChange.mockClear()
+
+    vi.advanceTimersByTime(1500)
+    detector.feed('t1', 'more output')
+    vi.advanceTimersByTime(1500)
+    // Should NOT have transitioned yet (timer reset)
+    expect(onStatusChange).not.toHaveBeenCalledWith('t1', 'idle', undefined)
+
+    vi.advanceTimersByTime(500)
+    expect(onStatusChange).toHaveBeenCalledWith('t1', 'idle', undefined)
+  })
+
+  it('transitions from working to idle when title drops working indicator', () => {
+    detector.register('t1')
+    detector.feed('t1', '\x1b]0;\u273B Jitterbugging\x07')
+    onStatusChange.mockClear()
+
+    detector.feed('t1', '\x1b]0;Claude Code\x07')
+    expect(onStatusChange).toHaveBeenCalledWith('t1', 'idle', undefined)
+  })
+
+  it('transitions to needs-input on input prompt patterns + silence', () => {
+    detector.register('t1')
+    onStatusChange.mockClear()
+
+    detector.feed('t1', 'Allow Read tool? (y)es (n)o')
+    vi.advanceTimersByTime(500)
+
+    expect(onStatusChange).toHaveBeenCalledWith('t1', 'needs-input', undefined)
+  })
+
   it('transitions to completed on OSC 9 notification while working', () => {
     detector.register('t1')
     detector.feed('t1', '\x1b]0;\u2807 Working\x07')

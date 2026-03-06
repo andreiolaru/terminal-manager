@@ -53,6 +53,7 @@ export interface TerminalState {
   activeGroupId: string | null
   nextTerminalNumber: number
   nextGroupNumber: number
+  sidebarCollapsed: boolean
 
   addGroup: () => string
   removeGroup: (groupId: string) => void
@@ -72,4 +73,5 @@ export interface TerminalState {
   instantiateLayout: (template: import('../../shared/template-types').LayoutTemplate) => string
   clearStartupCommand: (id: TerminalId) => void
   setClaudeStatus: (id: TerminalId, status: ClaudeCodeStatus, contextTitle?: string) => void
+  toggleSidebar: () => void
 }

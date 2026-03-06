@@ -8,6 +8,7 @@ const mockTerminal = {
   open: vi.fn(),
   write: vi.fn(),
   onData: vi.fn((_cb: (data: string) => void) => ({ dispose: vi.fn() })),
+  onTitleChange: vi.fn((_cb: (title: string) => void) => ({ dispose: vi.fn() })),
   onFocus: vi.fn(() => ({ dispose: vi.fn() })),
   focus: vi.fn(),
   dispose: vi.fn(),
@@ -22,6 +23,7 @@ vi.mock('@xterm/xterm', () => ({
     open = mockTerminal.open
     write = mockTerminal.write
     onData = mockTerminal.onData
+    onTitleChange = mockTerminal.onTitleChange
     onFocus = mockTerminal.onFocus
     focus = mockTerminal.focus
     dispose = mockTerminal.dispose

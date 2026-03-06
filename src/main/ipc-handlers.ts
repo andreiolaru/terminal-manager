@@ -1,4 +1,4 @@
-import { ipcMain, BrowserWindow } from 'electron'
+import { ipcMain, BrowserWindow, shell } from 'electron'
 import { existsSync } from 'fs'
 import { PtyManager } from './pty-manager'
 import { TemplateStorage } from './template-storage'
@@ -77,6 +77,10 @@ export function registerIpcHandlers(
 
   ipcMain.handle(IPC_CHANNELS.TEMPLATES_GET_PATH, async () => {
     return getTemplateStorage().getPath()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.TEMPLATES_SHOW_IN_FOLDER, async () => {
+    shell.showItemInFolder(getTemplateStorage().getPath())
   })
 
   ipcMain.on(IPC_CHANNELS.CLAUDE_REGISTER, (_, id: string) => {

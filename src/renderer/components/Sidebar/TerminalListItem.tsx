@@ -1,6 +1,14 @@
 import { useState, useRef, useEffect } from 'react'
 import type { TerminalInfo } from '../../store/types'
 import { useTerminalStore } from '../../store/terminal-store'
+import '../../assets/styles/claude-status.css'
+
+const statusIcons: Record<string, string> = {
+  idle: '\u25CF',
+  working: '\u25C6',
+  'needs-input': '\u25C8',
+  completed: '\u2713',
+}
 
 interface TerminalListItemProps {
   terminal: TerminalInfo
@@ -78,6 +86,11 @@ export default function TerminalListItem({ terminal, isActive }: TerminalListIte
       tabIndex={0}
       aria-selected={isActive}
     >
+      {terminal.claudeStatus && terminal.claudeStatus !== 'not-tracked' && (
+        <span className={`claude-status-icon ${terminal.claudeStatus}`}>
+          {statusIcons[terminal.claudeStatus]}
+        </span>
+      )}
       {isEditing ? (
         <input
           ref={inputRef}
@@ -88,7 +101,9 @@ export default function TerminalListItem({ terminal, isActive }: TerminalListIte
           onKeyDown={handleKeyDown}
         />
       ) : (
-        <span className="terminal-list-item-title">{terminal.title}</span>
+        <span className="terminal-list-item-title" title={terminal.title}>
+          {terminal.title.length > 25 ? terminal.title.slice(0, 25) + '\u2026' : terminal.title}
+        </span>
       )}
       <button className="terminal-close-btn" onClick={handleClose} title="Close terminal" aria-label={`Close ${terminal.title}`}>
         ×

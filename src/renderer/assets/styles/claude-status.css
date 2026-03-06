@@ -1,6 +1,6 @@
 /* Claude Code status icons */
 .claude-status-icon {
-  font-size: 10px;
+  font-size: 12px;
   flex-shrink: 0;
   line-height: 1;
 }

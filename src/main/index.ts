@@ -17,6 +17,7 @@ const SHORTCUT_ACCELERATORS: Record<string, string> = {
   'navigate-right': 'Alt+Right',
   'navigate-up': 'Alt+Up',
   'navigate-down': 'Alt+Down',
+  'toggle-sidebar': 'CmdOrCtrl+B',
 }
 
 app.setAppUserModelId('com.terminal-manager.app')
@@ -95,6 +96,8 @@ function createWindow(): void {
   }
 
   const viewSubmenu: Electron.MenuItemConstructorOptions[] = [
+    { label: 'Toggle Sidebar', accelerator: 'CmdOrCtrl+B', click: (): void => sendShortcut('toggle-sidebar') },
+    { type: 'separator' },
     { label: 'Split Right', click: (): void => sendShortcut('split-right') },
     { label: 'Split Down', click: (): void => sendShortcut('split-down') },
     { type: 'separator' },

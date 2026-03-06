@@ -64,6 +64,10 @@ const electronAPI = {
     return ipcRenderer.invoke(IPC_CHANNELS.TEMPLATES_GET_PATH)
   },
 
+  showTemplatesInFolder(): Promise<void> {
+    return ipcRenderer.invoke(IPC_CHANNELS.TEMPLATES_SHOW_IN_FOLDER)
+  },
+
   registerClaude(id: string): void {
     ipcRenderer.send(IPC_CHANNELS.CLAUDE_REGISTER, id)
   },

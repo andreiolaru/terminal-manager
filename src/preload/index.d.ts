@@ -13,6 +13,7 @@ export interface ElectronAPI {
   listTemplates(): Promise<LayoutTemplate[]>
   saveTemplates(templates: LayoutTemplate[]): Promise<void>
   getTemplatesPath(): Promise<string>
+  showTemplatesInFolder(): Promise<void>
   registerClaude(id: string): void
   unregisterClaude(id: string): void
   onClaudeStatus(callback: (id: string, status: string, contextTitle?: string) => void): () => void

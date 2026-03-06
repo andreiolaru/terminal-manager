@@ -10,21 +10,25 @@ interface TerminalState {
   status: ClaudeCodeStatus
   buffer: string
   silenceTimer: ReturnType<typeof setTimeout> | null
+  workingSilenceTimer: ReturnType<typeof setTimeout> | null
   lastDataTime: number
   lastTitle: string
 }
 
-// Braille spinner characters used by Claude Code in OSC title
-const BRAILLE_SPINNER = new Set([
-  '\u2807', '\u2819', '\u2839', '\u2838', '\u283C', '\u2834', '\u2826', '\u2827', '\u2847', '\u280F'
-])
+// Braille spinner characters used by Claude Code (U+2800..U+28FF block)
+const BRAILLE_RANGE_START = 0x2800
+const BRAILLE_RANGE_END = 0x28FF
 
 // Input box border characters (Unicode box-drawing)
-const INPUT_BOX_CHARS = /[\u2500-\u257F\u250C\u2510\u2514\u2518\u251C\u2524\u252C\u2534\u253C]/
+const INPUT_BOX_CHARS = /[\u2500-\u257F\u256D-\u2570\u250C\u2510\u2514\u2518\u251C\u2524\u252C\u2534\u253C]/
+
+// Text patterns that indicate Claude is waiting for user input
+const INPUT_PROMPT_PATTERNS = /\(y\)es|\(n\)o|\(a\)lways|Allow |Deny |yes\/no|approve/i
 
 const BUFFER_MAX = 2048
 const NEEDS_INPUT_SILENCE_MS = 500
 const COMPLETED_TO_IDLE_MS = 5000
+const WORKING_SILENCE_MS = 2000
 
 /**
  * Extract OSC signals from raw PTY data before ANSI stripping.
@@ -77,15 +81,27 @@ export function stripAnsi(str: string): string {
     .replace(/\x1b/g, '')                           // Any remaining bare ESC
 }
 
-function titleHasSpinner(title: string): boolean {
-  for (const char of title) {
-    if (BRAILLE_SPINNER.has(char)) return true
+function hasBrailleSpinner(text: string): boolean {
+  for (const char of text) {
+    const code = char.charCodeAt(0)
+    if (code >= BRAILLE_RANGE_START && code <= BRAILLE_RANGE_END && code !== BRAILLE_RANGE_START) {
+      return true
+    }
   }
   return false
 }
 
+// Claude Code sets OSC title to "✻ <activity>" (U+273B) or "* <activity>" when working
+function titleIndicatesWorking(title: string): boolean {
+  return title.startsWith('\u273B') || title.startsWith('* ') || hasBrailleSpinner(title)
+}
+
 function hasInputBoxChars(text: string): boolean {
   return INPUT_BOX_CHARS.test(text)
+}
+
+function hasInputPrompt(text: string): boolean {
+  return INPUT_PROMPT_PATTERNS.test(text)
 }
 
 export class ClaudeCodeDetector {
@@ -97,6 +113,7 @@ export class ClaudeCodeDetector {
       status: 'idle',
       buffer: '',
       silenceTimer: null,
+      workingSilenceTimer: null,
       lastDataTime: 0,
       lastTitle: ''
     })
@@ -105,7 +122,10 @@ export class ClaudeCodeDetector {
 
   unregister(id: string): void {
     const state = this.states.get(id)
-    if (state?.silenceTimer) clearTimeout(state.silenceTimer)
+    if (state) {
+      if (state.silenceTimer) clearTimeout(state.silenceTimer)
+      if (state.workingSilenceTimer) clearTimeout(state.workingSilenceTimer)
+    }
     this.states.delete(id)
   }
 
@@ -123,10 +143,14 @@ export class ClaudeCodeDetector {
     const osc = extractOscSignals(rawData)
 
     if (osc.title !== undefined) {
+      const wasWorking = titleIndicatesWorking(state.lastTitle)
       state.lastTitle = osc.title
 
-      if (titleHasSpinner(osc.title)) {
+      if (titleIndicatesWorking(osc.title)) {
         this.transition(id, state, 'working')
+      } else if (wasWorking && state.status === 'working') {
+        // Title dropped the working indicator — Claude finished, waiting for next input
+        this.transition(id, state, 'idle')
       }
     }
 
@@ -137,16 +161,28 @@ export class ClaudeCodeDetector {
       return
     }
 
-    // Phase 2: text pattern matching
+    // Phase 2: text pattern matching on stripped output
     const cleaned = stripAnsi(rawData)
     state.buffer += cleaned
     if (state.buffer.length > BUFFER_MAX) {
       state.buffer = state.buffer.slice(-BUFFER_MAX)
     }
 
-    // Input box detection: only relevant after working state
-    if (state.status === 'working' && hasInputBoxChars(cleaned)) {
-      this.scheduleSilenceCheck(id, state)
+    // Braille spinner in output text (Claude Code renders spinners inline)
+    if (hasBrailleSpinner(cleaned)) {
+      this.transition(id, state, 'working')
+    }
+
+    // Input box / prompt detection: works from any state except needs-input
+    if (state.status !== 'needs-input') {
+      if (hasInputBoxChars(cleaned) || hasInputPrompt(state.buffer)) {
+        this.scheduleSilenceCheck(id, state)
+      }
+    }
+
+    // When working, schedule idle transition on output silence
+    if (state.status === 'working') {
+      this.scheduleWorkingSilence(id, state)
     }
   }
 
@@ -165,6 +201,10 @@ export class ClaudeCodeDetector {
       clearTimeout(state.silenceTimer)
       state.silenceTimer = null
     }
+    if (state.workingSilenceTimer) {
+      clearTimeout(state.workingSilenceTimer)
+      state.workingSilenceTimer = null
+    }
     state.status = newStatus
     this.onStatusChange(id, newStatus, contextTitle)
   }
@@ -174,10 +214,20 @@ export class ClaudeCodeDetector {
     state.silenceTimer = setTimeout(() => {
       state.silenceTimer = null
       const elapsed = Date.now() - state.lastDataTime
-      if (elapsed >= NEEDS_INPUT_SILENCE_MS - 50 && state.status === 'working') {
+      if (elapsed >= NEEDS_INPUT_SILENCE_MS - 50 && state.status !== 'needs-input' && state.status !== 'completed') {
         this.transition(id, state, 'needs-input')
       }
     }, NEEDS_INPUT_SILENCE_MS)
+  }
+
+  private scheduleWorkingSilence(id: string, state: TerminalState): void {
+    if (state.workingSilenceTimer) clearTimeout(state.workingSilenceTimer)
+    state.workingSilenceTimer = setTimeout(() => {
+      state.workingSilenceTimer = null
+      if (state.status === 'working') {
+        this.transition(id, state, 'idle')
+      }
+    }, WORKING_SILENCE_MS)
   }
 
   private scheduleIdleTransition(id: string, state: TerminalState): void {
@@ -193,6 +243,7 @@ export class ClaudeCodeDetector {
   destroy(): void {
     for (const [, state] of this.states) {
       if (state.silenceTimer) clearTimeout(state.silenceTimer)
+      if (state.workingSilenceTimer) clearTimeout(state.workingSilenceTimer)
     }
     this.states.clear()
   }
