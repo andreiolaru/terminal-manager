@@ -63,9 +63,8 @@ function createWindow(): void {
   ptyManager.setWindow(mainWindow)
 
   const menuItems: Electron.MenuItemConstructorOptions[] = SHORTCUT_NAMES.map((name) => ({
-    label: name,
+    label: name.split('-').map(w => w[0].toUpperCase() + w.slice(1)).join(' '),
     accelerator: SHORTCUT_ACCELERATORS[name],
-    visible: false,
     click: (): void => {
       mainWindow.webContents.send(`shortcut:${name}`)
     }
