@@ -1,7 +1,0 @@
-{
-  "name": "terminal-expertise",
-  "description": "Specialized review agents for the terminal-manager Electron+React+xterm.js project",
-  "author": {
-    "name": "terminal-manager"
-  }
-}
