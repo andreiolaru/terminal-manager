@@ -3,6 +3,7 @@ import { immer } from 'zustand/middleware/immer'
 import { v4 as uuid } from 'uuid'
 import type { TerminalState, TerminalGroup } from './types'
 import { DEFAULT_SHELL } from '../lib/constants'
+import { destroyPtySafe } from '../lib/ipc-api'
 import { splitNode as splitTreeNode, removeNode, collectLeafIds, containsLeaf } from '../lib/tree-utils'
 
 function findGroupForTerminal(groups: TerminalGroup[], terminalId: string): TerminalGroup | undefined {
@@ -44,12 +45,16 @@ export const useTerminalStore = create<TerminalState>()(
     },
 
     removeGroup: (groupId): void => {
+      // Snapshot terminal IDs before state mutation for PTY cleanup
+      const currentState = useTerminalStore.getState()
+      const group = currentState.groups.find((g) => g.id === groupId)
+      if (!group) return
+      const terminalIds = collectLeafIds(group.splitTree)
+
       set((state) => {
         const groupIndex = state.groups.findIndex((g) => g.id === groupId)
         if (groupIndex === -1) return
 
-        const group = state.groups[groupIndex]
-        const terminalIds = collectLeafIds(group.splitTree)
         for (const tid of terminalIds) {
           delete state.terminals[tid]
         }
@@ -65,6 +70,11 @@ export const useTerminalStore = create<TerminalState>()(
           }
         }
       })
+
+      // Explicit PTY cleanup — don't rely solely on React unmount
+      for (const tid of terminalIds) {
+        destroyPtySafe(tid)
+      }
     },
 
     setActiveGroup: (groupId): void => {
@@ -85,15 +95,24 @@ export const useTerminalStore = create<TerminalState>()(
     },
 
     addTerminal: (): string => {
+      // C5: Check state before set() — no fragile delegatedToAddGroup flag
+      const currentState = useTerminalStore.getState()
+      const hasActiveGroup = currentState.groups.some((g) => g.id === currentState.activeGroupId)
+
+      if (!hasActiveGroup) {
+        const groupId = useTerminalStore.getState().addGroup()
+        const group = useTerminalStore.getState().groups.find((g) => g.id === groupId)
+        if (!group) {
+          return ''
+        }
+        return group.activeTerminalId
+      }
+
       const id = uuid()
       const now = Date.now()
-      let delegatedToAddGroup = false
       set((state) => {
         const activeGroup = state.groups.find((g) => g.id === state.activeGroupId)
-        if (!activeGroup) {
-          delegatedToAddGroup = true
-          return
-        }
+        if (!activeGroup) return
 
         state.terminals[id] = {
           id,
@@ -113,15 +132,12 @@ export const useTerminalStore = create<TerminalState>()(
         )
         activeGroup.activeTerminalId = id
       })
-      if (delegatedToAddGroup) {
-        const groupId = useTerminalStore.getState().addGroup()
-        const group = useTerminalStore.getState().groups.find((g) => g.id === groupId)
-        return group!.activeTerminalId
-      }
       return id
     },
 
     removeTerminal: (id): void => {
+      const exists = !!useTerminalStore.getState().terminals[id]
+
       set((state) => {
         if (!state.terminals[id]) return
 
@@ -150,11 +166,19 @@ export const useTerminalStore = create<TerminalState>()(
         } else {
           group.splitTree = newTree
           if (group.activeTerminalId === id) {
+            // C6: Guard against empty remaining array
             const remaining = collectLeafIds(newTree)
-            group.activeTerminalId = remaining[0]
+            if (remaining.length > 0) {
+              group.activeTerminalId = remaining[0]
+            }
           }
         }
       })
+
+      // Explicit PTY cleanup — don't rely solely on React unmount
+      if (exists) {
+        destroyPtySafe(id)
+      }
     },
 
     splitTerminal: (id, direction): void => {

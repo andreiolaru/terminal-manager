@@ -42,7 +42,8 @@
   opacity: 0;
 }
 
-.terminal-pane:hover .terminal-title-actions {
+.terminal-pane:hover .terminal-title-actions,
+.terminal-pane:focus-within .terminal-title-actions {
   opacity: 1;
 }
 
@@ -62,9 +63,15 @@
   padding: 0;
 }
 
-.terminal-title-actions button:hover {
+.terminal-title-actions button:hover,
+.terminal-title-actions button:focus-visible {
   background: #3c3c3c;
   color: #cccccc;
+  outline: none;
+}
+
+.terminal-title-actions button:focus-visible {
+  outline: 1px solid #007acc;
 }
 
 .terminal-title-actions button.close-btn:hover {

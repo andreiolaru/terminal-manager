@@ -1,11 +1,7 @@
+import type { PtyCreateOptions } from '../shared/ipc-types'
+
 export interface ElectronAPI {
-  createPty(options: {
-    id: string
-    shell?: string
-    cwd?: string
-    cols?: number
-    rows?: number
-  }): Promise<void>
+  createPty(options: PtyCreateOptions): Promise<void>
   writePty(id: string, data: string): void
   resizePty(id: string, cols: number, rows: number): void
   destroyPty(id: string): Promise<void>

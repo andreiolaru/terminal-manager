@@ -50,11 +50,14 @@ export default function TerminalTabs() {
   }
 
   return (
-    <div className="terminal-tabs">
+    <div className="terminal-tabs" role="tablist" aria-label="Terminal groups">
       {groups.map((group) => (
         <div
           key={group.id}
           className={`terminal-tab${group.id === activeGroupId ? ' active' : ''}`}
+          role="tab"
+          aria-selected={group.id === activeGroupId}
+          tabIndex={group.id === activeGroupId ? 0 : -1}
           onClick={() => setActiveGroup(group.id)}
           onDoubleClick={() => handleDoubleClick(group.id, group.label)}
         >
@@ -75,12 +78,18 @@ export default function TerminalTabs() {
             className="terminal-tab-close"
             onClick={(e) => handleClose(e, group.id)}
             title="Close Group"
+            aria-label={`Close ${group.label}`}
           >
             ×
           </button>
         </div>
       ))}
-      <button className="terminal-tab-add" onClick={addGroup} title="New Group">
+      <button
+        className="terminal-tab-add"
+        onClick={addGroup}
+        title="New Group"
+        aria-label="New Group"
+      >
         +
       </button>
     </div>

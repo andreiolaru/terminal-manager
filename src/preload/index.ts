@@ -1,42 +1,38 @@
 import { contextBridge, ipcRenderer } from 'electron'
+import { IPC_CHANNELS } from '../shared/ipc-types'
+import type { PtyCreateOptions } from '../shared/ipc-types'
 
 const electronAPI = {
-  createPty(options: {
-    id: string
-    shell?: string
-    cwd?: string
-    cols?: number
-    rows?: number
-  }): Promise<void> {
-    return ipcRenderer.invoke('pty:create', options)
+  createPty(options: PtyCreateOptions): Promise<void> {
+    return ipcRenderer.invoke(IPC_CHANNELS.PTY_CREATE, options)
   },
 
   writePty(id: string, data: string): void {
-    ipcRenderer.send('pty:write', id, data)
+    ipcRenderer.send(IPC_CHANNELS.PTY_WRITE, id, data)
   },
 
   resizePty(id: string, cols: number, rows: number): void {
-    ipcRenderer.send('pty:resize', id, cols, rows)
+    ipcRenderer.send(IPC_CHANNELS.PTY_RESIZE, id, cols, rows)
   },
 
   destroyPty(id: string): Promise<void> {
-    return ipcRenderer.invoke('pty:destroy', id)
+    return ipcRenderer.invoke(IPC_CHANNELS.PTY_DESTROY, id)
   },
 
   onPtyData(callback: (id: string, data: string) => void): () => void {
     const handler = (_event: Electron.IpcRendererEvent, id: string, data: string): void => {
       callback(id, data)
     }
-    ipcRenderer.on('pty:data', handler)
-    return () => ipcRenderer.removeListener('pty:data', handler)
+    ipcRenderer.on(IPC_CHANNELS.PTY_DATA, handler)
+    return () => ipcRenderer.removeListener(IPC_CHANNELS.PTY_DATA, handler)
   },
 
   onPtyExit(callback: (id: string, exitCode: number) => void): () => void {
     const handler = (_event: Electron.IpcRendererEvent, id: string, exitCode: number): void => {
       callback(id, exitCode)
     }
-    ipcRenderer.on('pty:exit', handler)
-    return () => ipcRenderer.removeListener('pty:exit', handler)
+    ipcRenderer.on(IPC_CHANNELS.PTY_EXIT, handler)
+    return () => ipcRenderer.removeListener(IPC_CHANNELS.PTY_EXIT, handler)
   }
 }
 

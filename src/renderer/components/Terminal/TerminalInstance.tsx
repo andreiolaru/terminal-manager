@@ -3,6 +3,7 @@ import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import { WebglAddon } from '@xterm/addon-webgl'
 import { ipcApi } from '../../lib/ipc-api'
+import { registerTerminal, unregisterTerminal } from '../../lib/pty-dispatcher'
 import { DEFAULT_SCROLLBACK, RESIZE_DEBOUNCE_MS } from '../../lib/constants'
 import '@xterm/xterm/css/xterm.css'
 import '../../assets/styles/terminal.css'
@@ -41,27 +42,18 @@ export default function TerminalInstance({ terminalId, isVisible }: TerminalInst
     try {
       terminal.loadAddon(new WebglAddon())
     } catch {
-      // DOM renderer fallback
+      console.warn('WebGL addon failed to load, using canvas renderer')
     }
 
     fitAddon.fit()
     terminalRef.current = terminal
     fitAddonRef.current = fitAddon
 
-    // C5: Register listeners BEFORE creating PTY to avoid losing initial data
-    const unsubData = ipcApi.onPtyData((id, data) => {
-      if (id === terminalId) {
-        terminal.write(data)
-      }
+    // Register with centralized dispatcher for O(1) IPC routing
+    registerTerminal(terminalId, terminal, (exitCode) => {
+      terminal.write(`\r\n\x1b[90m[Process exited with code ${exitCode}]\x1b[0m\r\n`)
     })
 
-    const unsubExit = ipcApi.onPtyExit((id, exitCode) => {
-      if (id === terminalId) {
-        terminal.write(`\r\n\x1b[90m[Process exited with code ${exitCode}]\x1b[0m\r\n`)
-      }
-    })
-
-    // C7: Handle createPty rejection
     ipcApi.createPty({
       id: terminalId,
       cols: terminal.cols,
@@ -74,13 +66,16 @@ export default function TerminalInstance({ terminalId, isVisible }: TerminalInst
       ipcApi.writePty(terminalId, data)
     })
 
-    // C10: Debounce resize events; skip when hidden (display:none → 0×0 kills PTY)
+    // Debounce resize events; skip when hidden (display:none → 0×0 kills PTY)
     let resizeTimer: ReturnType<typeof setTimeout> | null = null
+    let rafId: number | null = null
     const resizeObserver = new ResizeObserver(() => {
       if (!visibleRef.current) return
       if (resizeTimer) clearTimeout(resizeTimer)
       resizeTimer = setTimeout(() => {
-        requestAnimationFrame(() => {
+        if (rafId !== null) cancelAnimationFrame(rafId)
+        rafId = requestAnimationFrame(() => {
+          rafId = null
           if (fitAddonRef.current && visibleRef.current) {
             fitAddonRef.current.fit()
             if (terminalRef.current) {
@@ -94,12 +89,11 @@ export default function TerminalInstance({ terminalId, isVisible }: TerminalInst
 
     return () => {
       if (resizeTimer) clearTimeout(resizeTimer)
+      if (rafId !== null) cancelAnimationFrame(rafId)
       resizeObserver.disconnect()
       onDataDisposable.dispose()
-      unsubData()
-      unsubExit()
+      unregisterTerminal(terminalId)
       terminal.dispose()
-      // C8: Catch destroyPty rejection (PTY may already be dead)
       ipcApi.destroyPty(terminalId).catch(() => {})
     }
   }, [terminalId])

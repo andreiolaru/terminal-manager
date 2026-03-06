@@ -1,8 +1,9 @@
 import { ipcMain } from 'electron'
 import { existsSync } from 'fs'
 import { PtyManager } from './pty-manager'
+import { IPC_CHANNELS } from '../shared/ipc-types'
+import type { PtyCreateOptions } from '../shared/ipc-types'
 
-// C2: Allowlist of valid shells
 const ALLOWED_SHELLS = new Set([
   'powershell.exe',
   'pwsh.exe',
@@ -14,18 +15,20 @@ const ALLOWED_SHELLS = new Set([
 
 export function registerIpcHandlers(ptyManager: PtyManager): void {
   ipcMain.handle(
-    'pty:create',
-    async (_, options: { id: string; shell?: string; cwd?: string; cols?: number; rows?: number }) => {
+    IPC_CHANNELS.PTY_CREATE,
+    async (_, options: PtyCreateOptions) => {
       const shell = options.shell || 'powershell.exe'
-      if (!ALLOWED_SHELLS.has(shell)) {
+      if (!ALLOWED_SHELLS.has(shell.toLowerCase())) {
         throw new Error(`Shell not allowed: ${shell}`)
       }
       const cwd = options.cwd || process.env.USERPROFILE || 'C:\\'
       if (!existsSync(cwd)) {
         throw new Error(`Working directory does not exist: ${cwd}`)
       }
-      const cols = options.cols || 80
-      const rows = options.rows || 24
+      const rawCols = options.cols ?? 80
+      const rawRows = options.rows ?? 24
+      const cols = Number.isFinite(rawCols) && rawCols > 0 ? Math.floor(rawCols) : 80
+      const rows = Number.isFinite(rawRows) && rawRows > 0 ? Math.floor(rawRows) : 24
       try {
         ptyManager.create(options.id, shell, cwd, cols, rows)
       } catch (err) {
@@ -34,15 +37,17 @@ export function registerIpcHandlers(ptyManager: PtyManager): void {
     }
   )
 
-  ipcMain.on('pty:write', (_, id: string, data: string) => {
+  ipcMain.on(IPC_CHANNELS.PTY_WRITE, (_, id: string, data: string) => {
     ptyManager.write(id, data)
   })
 
-  ipcMain.on('pty:resize', (_, id: string, cols: number, rows: number) => {
-    ptyManager.resize(id, cols, rows)
+  ipcMain.on(IPC_CHANNELS.PTY_RESIZE, (_, id: string, cols: number, rows: number) => {
+    const safeCols = Number.isFinite(cols) && cols > 0 ? Math.floor(cols) : 80
+    const safeRows = Number.isFinite(rows) && rows > 0 ? Math.floor(rows) : 24
+    ptyManager.resize(id, safeCols, safeRows)
   })
 
-  ipcMain.handle('pty:destroy', async (_, id: string) => {
+  ipcMain.handle(IPC_CHANNELS.PTY_DESTROY, async (_, id: string) => {
     ptyManager.destroy(id)
   })
 }

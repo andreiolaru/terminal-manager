@@ -1,17 +1,7 @@
-import { useEffect } from 'react'
-import { ipcApi } from '../lib/ipc-api'
-import { useTerminalStore } from '../store/terminal-store'
-
+// PTY IPC dispatching is now handled centrally by src/renderer/lib/pty-dispatcher.ts
+// This module is kept for backward compatibility but is a no-op.
+// The dispatcher registers a single onPtyData/onPtyExit listener and routes
+// data to terminals via O(1) Map lookup instead of O(N) fan-out.
 export function usePtyIpc(): void {
-  const setTerminalDead = useTerminalStore((s) => s.setTerminalDead)
-
-  useEffect(() => {
-    const unsubExit = ipcApi.onPtyExit((id: string, _exitCode: number) => {
-      setTerminalDead(id)
-    })
-
-    return () => {
-      unsubExit()
-    }
-  }, [setTerminalDead])
+  // no-op — exit handling moved to pty-dispatcher
 }

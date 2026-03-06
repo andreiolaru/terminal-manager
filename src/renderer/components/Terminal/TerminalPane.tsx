@@ -1,3 +1,4 @@
+import { memo, useCallback } from 'react'
 import { useTerminalStore } from '../../store/terminal-store'
 import TerminalInstance from './TerminalInstance'
 import '../../assets/styles/splitpane.css'
@@ -7,7 +8,7 @@ interface TerminalPaneProps {
   groupId: string
 }
 
-export default function TerminalPane({ terminalId, groupId }: TerminalPaneProps) {
+export default memo(function TerminalPane({ terminalId, groupId }: TerminalPaneProps) {
   const title = useTerminalStore((s) => s.terminals[terminalId]?.title ?? '')
   const isActive = useTerminalStore(
     (s) => s.groups.find((g) => g.id === groupId)?.activeTerminalId === terminalId
@@ -17,29 +18,29 @@ export default function TerminalPane({ terminalId, groupId }: TerminalPaneProps)
   const removeTerminal = useTerminalStore((s) => s.removeTerminal)
   const setActiveTerminal = useTerminalStore((s) => s.setActiveTerminal)
 
+  const handleSplitH = useCallback(() => splitTerminal(terminalId, 'horizontal'), [splitTerminal, terminalId])
+  const handleSplitV = useCallback(() => splitTerminal(terminalId, 'vertical'), [splitTerminal, terminalId])
+  const handleClose = useCallback(() => removeTerminal(terminalId), [removeTerminal, terminalId])
+  const handleMouseDown = useCallback(() => setActiveTerminal(terminalId), [setActiveTerminal, terminalId])
+
   const className = `terminal-pane${isActive ? ' active' : ''}`
 
   return (
-    <div className={className} onMouseDown={() => setActiveTerminal(terminalId)}>
+    <div className={className} onMouseDown={handleMouseDown}>
       <div className="terminal-title-bar">
         <span className="title">{title}</span>
         <div className="terminal-title-actions">
-          <button
-            onClick={() => splitTerminal(terminalId, 'horizontal')}
-            title="Split Right"
-          >
+          <button onClick={handleSplitH} title="Split Right" aria-label="Split Right">
             ⫼
           </button>
-          <button
-            onClick={() => splitTerminal(terminalId, 'vertical')}
-            title="Split Down"
-          >
+          <button onClick={handleSplitV} title="Split Down" aria-label="Split Down">
             ⊟
           </button>
           <button
             className="close-btn"
-            onClick={() => removeTerminal(terminalId)}
+            onClick={handleClose}
             title="Close"
+            aria-label="Close terminal"
           >
             ×
           </button>
@@ -50,4 +51,4 @@ export default function TerminalPane({ terminalId, groupId }: TerminalPaneProps)
       </div>
     </div>
   )
-}
+})

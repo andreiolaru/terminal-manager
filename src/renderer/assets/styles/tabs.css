@@ -20,11 +20,17 @@
   background: #2d2d2d;
   min-width: 0;
   flex-shrink: 0;
+  border-bottom: 2px solid transparent;
 }
 
 .terminal-tab.active {
   background: #1e1e1e;
-  border-bottom: 2px solid #007acc;
+  border-bottom-color: #007acc;
+}
+
+.terminal-tab:focus-visible {
+  outline: 1px solid #007acc;
+  outline-offset: -1px;
 }
 
 .terminal-tab:hover:not(.active) {
@@ -96,6 +102,17 @@
   flex-shrink: 0;
 }
 
-.terminal-tab-add:hover {
+.terminal-tab-add:hover,
+.terminal-tab-add:focus-visible {
   background: #3c3c3c;
+}
+
+.terminal-tab-add:focus-visible {
+  outline: 1px solid #007acc;
+  outline-offset: -1px;
+}
+
+.terminal-tab-close:focus-visible {
+  outline: 1px solid #007acc;
+  outline-offset: -1px;
 }
