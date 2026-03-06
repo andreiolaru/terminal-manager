@@ -1,12 +1,18 @@
 import * as pty from 'node-pty'
 import { BrowserWindow } from 'electron'
+import type { ClaudeCodeDetector } from './claude-detector'
 
 export class PtyManager {
   private ptys = new Map<string, pty.IPty>()
   private window: BrowserWindow | null = null
+  private detector: ClaudeCodeDetector | null = null
 
   setWindow(window: BrowserWindow): void {
     this.window = window
+  }
+
+  setDetector(detector: ClaudeCodeDetector): void {
+    this.detector = detector
   }
 
   create(id: string, shell: string, cwd: string, cols: number, rows: number): void {
@@ -24,7 +30,10 @@ export class PtyManager {
     })
 
     ptyProcess.onData((data) => {
-      this.window?.webContents.send('pty:data', id, data)
+      if (this.window && !this.window.isDestroyed()) {
+        this.window.webContents.send('pty:data', id, data)
+      }
+      this.detector?.feed(id, data)
     })
 
     // Only handle exit if this ptyProcess is still the active one for this ID.
@@ -33,7 +42,9 @@ export class PtyManager {
     ptyProcess.onExit(({ exitCode }) => {
       if (this.ptys.get(id) !== ptyProcess) return
       this.ptys.delete(id)
-      this.window?.webContents.send('pty:exit', id, exitCode)
+      if (this.window && !this.window.isDestroyed()) {
+        this.window.webContents.send('pty:exit', id, exitCode)
+      }
     })
 
     this.ptys.set(id, ptyProcess)
@@ -41,6 +52,7 @@ export class PtyManager {
 
   write(id: string, data: string): void {
     this.ptys.get(id)?.write(data)
+    this.detector?.onWrite(id)
   }
 
   resize(id: string, cols: number, rows: number): void {

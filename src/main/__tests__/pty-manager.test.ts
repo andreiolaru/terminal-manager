@@ -47,7 +47,8 @@ describe('PtyManager', () => {
     manager = new PtyManager()
     mockSend = vi.fn()
     manager.setWindow({
-      webContents: { send: mockSend }
+      webContents: { send: mockSend },
+      isDestroyed: () => false
     } as unknown as import('electron').BrowserWindow)
   })
 

@@ -18,7 +18,12 @@ const electronAPI = {
   setWindowTitle: vi.fn(),
   listTemplates: vi.fn(() => Promise.resolve([])),
   saveTemplates: vi.fn(() => Promise.resolve()),
-  getTemplatesPath: vi.fn(() => Promise.resolve(''))
+  getTemplatesPath: vi.fn(() => Promise.resolve('')),
+  registerClaude: vi.fn(),
+  unregisterClaude: vi.fn(),
+  onClaudeStatus: vi.fn(() => vi.fn()),
+  onNotificationFocusTerminal: vi.fn(() => vi.fn()),
+  setActiveTerminalForNotifications: vi.fn()
 }
 
 Object.defineProperty(window, 'electronAPI', {

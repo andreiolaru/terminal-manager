@@ -9,6 +9,12 @@ export const IPC_CHANNELS = {
   TEMPLATES_LIST: 'templates:list',
   TEMPLATES_SAVE: 'templates:save',
   TEMPLATES_GET_PATH: 'templates:get-path',
+  TEMPLATES_SHOW_IN_FOLDER: 'templates:show-in-folder',
+  CLAUDE_REGISTER: 'claude:register',
+  CLAUDE_UNREGISTER: 'claude:unregister',
+  CLAUDE_STATUS: 'claude:status',
+  NOTIFICATION_FOCUS_TERMINAL: 'notification:focus-terminal',
+  NOTIFICATION_ACTIVE_TERMINAL: 'notification:active-terminal',
 } as const
 
 export const SHORTCUT_NAMES = [

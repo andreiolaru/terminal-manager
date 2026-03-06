@@ -16,16 +16,18 @@ export default function TemplateLauncher({ onManageTemplates }: TemplateLauncher
 
   const handleToggle = async (): Promise<void> => {
     if (loadingRef.current) return
-    setOpen((prev) => {
-      if (!prev) {
-        loadingRef.current = true
-        listTemplatesSafe().then((list) => {
-          setTemplates(list)
-          loadingRef.current = false
-        })
-      }
-      return !prev
-    })
+    if (open) {
+      setOpen(false)
+      return
+    }
+    loadingRef.current = true
+    try {
+      const list = await listTemplatesSafe()
+      setTemplates(list)
+      setOpen(true)
+    } finally {
+      loadingRef.current = false
+    }
   }
 
   useEffect(() => {

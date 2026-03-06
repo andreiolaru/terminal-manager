@@ -15,7 +15,8 @@
   background: var(--tm-panel-bg, #1e1e1e);
   border: 1px solid var(--tm-border);
   border-radius: 8px;
-  width: 560px;
+  width: 600px;
+  max-width: 90vw;
   max-height: 80vh;
   display: flex;
   flex-direction: column;
@@ -224,4 +225,56 @@
   height: 28px;
   padding: 2px;
   cursor: pointer;
+}
+
+.template-editor-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--tm-border);
+  margin-bottom: 6px;
+}
+
+.template-editor-tabs button {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--tm-text-secondary);
+  font-size: 12px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+.template-editor-tabs button:hover {
+  color: var(--tm-text-primary);
+}
+
+.template-editor-tabs button.active {
+  color: var(--tm-text-primary);
+  border-bottom-color: var(--tm-accent);
+}
+
+.template-json-editor {
+  width: 100%;
+  min-height: 280px;
+  background: var(--tm-hover-bg);
+  border: 1px solid var(--tm-border);
+  color: var(--tm-text-primary);
+  font-family: 'Cascadia Code', 'Consolas', monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  padding: 8px;
+  border-radius: 3px;
+  outline: none;
+  resize: vertical;
+  tab-size: 2;
+}
+
+.template-json-editor:focus {
+  border-color: var(--tm-accent);
+}
+
+.template-json-error {
+  color: var(--tm-danger, #f44);
+  font-size: 11px;
+  margin-top: 4px;
 }

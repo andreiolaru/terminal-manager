@@ -62,6 +62,34 @@ const electronAPI = {
 
   getTemplatesPath(): Promise<string> {
     return ipcRenderer.invoke(IPC_CHANNELS.TEMPLATES_GET_PATH)
+  },
+
+  registerClaude(id: string): void {
+    ipcRenderer.send(IPC_CHANNELS.CLAUDE_REGISTER, id)
+  },
+
+  unregisterClaude(id: string): void {
+    ipcRenderer.send(IPC_CHANNELS.CLAUDE_UNREGISTER, id)
+  },
+
+  onClaudeStatus(callback: (id: string, status: string, contextTitle?: string) => void): () => void {
+    const handler = (_event: Electron.IpcRendererEvent, id: string, status: string, contextTitle?: string): void => {
+      callback(id, status, contextTitle)
+    }
+    ipcRenderer.on(IPC_CHANNELS.CLAUDE_STATUS, handler)
+    return () => ipcRenderer.removeListener(IPC_CHANNELS.CLAUDE_STATUS, handler)
+  },
+
+  onNotificationFocusTerminal(callback: (id: string) => void): () => void {
+    const handler = (_event: Electron.IpcRendererEvent, id: string): void => {
+      callback(id)
+    }
+    ipcRenderer.on(IPC_CHANNELS.NOTIFICATION_FOCUS_TERMINAL, handler)
+    return () => ipcRenderer.removeListener(IPC_CHANNELS.NOTIFICATION_FOCUS_TERMINAL, handler)
+  },
+
+  setActiveTerminalForNotifications(id: string | null): void {
+    ipcRenderer.send(IPC_CHANNELS.NOTIFICATION_ACTIVE_TERMINAL, id)
   }
 }
 

@@ -3,6 +3,8 @@ import MainLayout from './components/Layout/MainLayout'
 import { useTerminalStore } from './store/terminal-store'
 import { usePtyIpc } from './hooks/usePtyIpc'
 import { useShortcuts } from './hooks/useShortcuts'
+import { initClaudeStatusDispatcher } from './lib/claude-status-dispatcher'
+import { ipcApi } from './lib/ipc-api'
 
 function App() {
   const addGroup = useTerminalStore((s) => s.addGroup)
@@ -10,6 +12,24 @@ function App() {
 
   usePtyIpc()
   useShortcuts()
+
+  // Initialize claude status dispatcher
+  useEffect(() => {
+    return initClaudeStatusDispatcher()
+  }, [])
+
+  // Push active terminal changes to main for notification suppression
+  useEffect(() => {
+    return useTerminalStore.subscribe(
+      (state) => {
+        const group = state.groups.find((g) => g.id === state.activeGroupId)
+        return group?.activeTerminalId ?? null
+      },
+      (activeTerminalId) => {
+        ipcApi.setActiveTerminalForNotifications(activeTerminalId)
+      }
+    )
+  }, [])
 
   useEffect(() => {
     if (!didInit.current) {

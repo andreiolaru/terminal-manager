@@ -1,0 +1,32 @@
+/* Claude Code status icons */
+.claude-status-icon {
+  font-size: 10px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.claude-status-icon.idle { color: #6e7681; }
+.claude-status-icon.working { color: #58a6ff; }
+.claude-status-icon.needs-input {
+  color: #d29922;
+  animation: claude-status-pulse 1.5s ease-in-out infinite;
+}
+.claude-status-icon.completed { color: #3fb950; }
+
+@keyframes claude-status-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* Title bar tinting by status */
+.terminal-pane.claude-needs-input .terminal-title-bar {
+  background: linear-gradient(90deg, rgba(210, 153, 34, 0.15), transparent 60%),
+              linear-gradient(var(--tm-group-color-bg, transparent), var(--tm-group-color-bg, transparent)),
+              var(--tm-titlebar-bg);
+}
+
+.terminal-pane.claude-completed .terminal-title-bar {
+  background: linear-gradient(90deg, rgba(63, 185, 80, 0.10), transparent 60%),
+              linear-gradient(var(--tm-group-color-bg, transparent), var(--tm-group-color-bg, transparent)),
+              var(--tm-titlebar-bg);
+}

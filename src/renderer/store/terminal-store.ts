@@ -304,6 +304,15 @@ export const useTerminalStore = create<TerminalState>()(
           delete state.terminals[id].startupCommand
         }
       })
+    },
+
+    setClaudeStatus: (id, status, contextTitle): void => {
+      set((state) => {
+        if (state.terminals[id]) {
+          state.terminals[id].claudeStatus = status
+          state.terminals[id].claudeStatusTitle = contextTitle
+        }
+      })
     }
   })),
   {

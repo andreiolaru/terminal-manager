@@ -1,9 +1,28 @@
 import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useTerminalStore } from '../../store/terminal-store'
+import { collectLeafIds } from '../../lib/tree-utils'
 import TemplateLauncher from './TemplateLauncher'
 import TemplateManager from './TemplateManager'
 import '../../assets/styles/tabs.css'
+
+function useGroupAttention(groupId: string): 'needs-input' | 'completed' | null {
+  return useTerminalStore((s) => {
+    const group = s.groups.find((g) => g.id === groupId)
+    if (!group) return null
+    const leafIds = collectLeafIds(group.splitTree)
+    const statuses = leafIds.map((id) => s.terminals[id]?.claudeStatus)
+    if (statuses.includes('needs-input')) return 'needs-input'
+    if (statuses.includes('completed')) return 'completed'
+    return null
+  })
+}
+
+function AttentionBadge({ groupId }: { groupId: string }) {
+  const attention = useGroupAttention(groupId)
+  if (!attention) return null
+  return <span className={`terminal-tab-attention ${attention}`} />
+}
 
 export default function TerminalTabs() {
   const groups = useTerminalStore((s) => s.groups)
@@ -55,41 +74,44 @@ export default function TerminalTabs() {
 
   return (
     <div className="terminal-tabs" role="tablist" aria-label="Terminal groups">
-      {groups.map((group) => (
-        <div
-          key={group.id}
-          className={`terminal-tab${group.id === activeGroupId ? ' active' : ''}`}
-          role="tab"
-          aria-selected={group.id === activeGroupId}
-          tabIndex={group.id === activeGroupId ? 0 : -1}
-          onClick={() => setActiveGroup(group.id)}
-          onDoubleClick={() => handleDoubleClick(group.id, group.label)}
-          style={group.color ? { '--tm-group-color': group.color } as React.CSSProperties : undefined}
-        >
-          {group.icon && <span className="terminal-tab-icon">{group.icon}</span>}
-          {editingId === group.id ? (
-            <input
-              ref={inputRef}
-              className="terminal-tab-rename-input"
-              value={editValue}
-              onChange={(e) => setEditValue(e.target.value)}
-              onBlur={commitRename}
-              onKeyDown={handleKeyDown}
-              onClick={(e) => e.stopPropagation()}
-            />
-          ) : (
-            <span className="terminal-tab-label">{group.label}</span>
-          )}
-          <button
-            className="terminal-tab-close"
-            onClick={(e) => handleClose(e, group.id)}
-            title="Close Group"
-            aria-label={`Close ${group.label}`}
+      <div className="terminal-tabs-scroll">
+        {groups.map((group) => (
+          <div
+            key={group.id}
+            className={`terminal-tab${group.id === activeGroupId ? ' active' : ''}`}
+            role="tab"
+            aria-selected={group.id === activeGroupId}
+            tabIndex={group.id === activeGroupId ? 0 : -1}
+            onClick={() => setActiveGroup(group.id)}
+            onDoubleClick={() => handleDoubleClick(group.id, group.label)}
+            style={group.color ? { '--tm-group-color': group.color } as React.CSSProperties : undefined}
           >
-            ×
-          </button>
-        </div>
-      ))}
+            <AttentionBadge groupId={group.id} />
+            {group.icon && <span className="terminal-tab-icon">{group.icon}</span>}
+            {editingId === group.id ? (
+              <input
+                ref={inputRef}
+                className="terminal-tab-rename-input"
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+                onBlur={commitRename}
+                onKeyDown={handleKeyDown}
+                onClick={(e) => e.stopPropagation()}
+              />
+            ) : (
+              <span className="terminal-tab-label">{group.label}</span>
+            )}
+            <button
+              className="terminal-tab-close"
+              onClick={(e) => handleClose(e, group.id)}
+              title="Close Group"
+              aria-label={`Close ${group.label}`}
+            >
+              ×
+            </button>
+          </div>
+        ))}
+      </div>
       <button
         className="terminal-tab-add"
         onClick={addGroup}

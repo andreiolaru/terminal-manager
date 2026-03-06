@@ -14,6 +14,9 @@ export default function TemplateManager({ onClose }: TemplateManagerProps) {
   const [templates, setTemplates] = useState<LayoutTemplate[]>([])
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editForm, setEditForm] = useState({ name: '', icon: '', color: '' })
+  const [editMode, setEditMode] = useState<'form' | 'json'>('form')
+  const [jsonText, setJsonText] = useState('')
+  const [jsonError, setJsonError] = useState('')
   const [isSaving, setIsSaving] = useState(false)
 
   const groups = useTerminalStore((s) => s.groups)
@@ -67,10 +70,32 @@ export default function TemplateManager({ onClose }: TemplateManagerProps) {
   const startEdit = (tpl: LayoutTemplate): void => {
     setEditingId(tpl.id)
     setEditForm({ name: tpl.name, icon: tpl.icon || '', color: tpl.color || '' })
+    setJsonText(JSON.stringify(tpl, null, 2))
+    setJsonError('')
+    setEditMode('form')
   }
 
   const commitEdit = (): void => {
     if (!editingId) return
+
+    if (editMode === 'json') {
+      try {
+        const parsed = JSON.parse(jsonText) as LayoutTemplate
+        if (!parsed.name || !parsed.layout) {
+          setJsonError('Template must have "name" and "layout" fields')
+          return
+        }
+        const updated = templates.map((t) =>
+          t.id === editingId ? { ...parsed, id: editingId } : t
+        )
+        persist(updated)
+        setEditingId(null)
+      } catch (e) {
+        setJsonError(e instanceof Error ? e.message : 'Invalid JSON')
+      }
+      return
+    }
+
     const updated = templates.map((t) =>
       t.id === editingId
         ? { ...t, name: editForm.name.trim() || t.name, icon: editForm.icon || undefined, color: editForm.color || undefined }
@@ -96,33 +121,72 @@ export default function TemplateManager({ onClose }: TemplateManagerProps) {
         <div className="template-manager-body">
           {editingId ? (
             <div className="template-editor">
-              <div className="template-editor-field">
-                <label>Name</label>
-                <input
-                  value={editForm.name}
-                  onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
-                  autoFocus
-                />
+              <div className="template-editor-tabs">
+                <button
+                  className={editMode === 'form' ? 'active' : ''}
+                  onClick={() => setEditMode('form')}
+                >
+                  Properties
+                </button>
+                <button
+                  className={editMode === 'json' ? 'active' : ''}
+                  onClick={() => {
+                    const tpl = templates.find((t) => t.id === editingId)
+                    if (tpl && editMode === 'form') {
+                      setJsonText(JSON.stringify(
+                        { ...tpl, name: editForm.name.trim() || tpl.name, icon: editForm.icon || undefined, color: editForm.color || undefined },
+                        null, 2
+                      ))
+                    }
+                    setJsonError('')
+                    setEditMode('json')
+                  }}
+                >
+                  JSON
+                </button>
               </div>
-              <div className="template-editor-row">
+              {editMode === 'form' ? (
+                <>
+                  <div className="template-editor-field">
+                    <label>Name</label>
+                    <input
+                      value={editForm.name}
+                      onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
+                      autoFocus
+                    />
+                  </div>
+                  <div className="template-editor-row">
+                    <div className="template-editor-field">
+                      <label>Icon</label>
+                      <input
+                        value={editForm.icon}
+                        onChange={(e) => setEditForm((f) => ({ ...f, icon: e.target.value }))}
+                        placeholder="e.g. BE, ##"
+                        maxLength={4}
+                      />
+                    </div>
+                    <div className="template-editor-field">
+                      <label>Color</label>
+                      <input
+                        type="color"
+                        value={editForm.color || '#007acc'}
+                        onChange={(e) => setEditForm((f) => ({ ...f, color: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+                </>
+              ) : (
                 <div className="template-editor-field">
-                  <label>Icon</label>
-                  <input
-                    value={editForm.icon}
-                    onChange={(e) => setEditForm((f) => ({ ...f, icon: e.target.value }))}
-                    placeholder="e.g. BE, ##"
-                    maxLength={4}
+                  <label>Template JSON</label>
+                  <textarea
+                    className="template-json-editor"
+                    value={jsonText}
+                    onChange={(e) => { setJsonText(e.target.value); setJsonError('') }}
+                    spellCheck={false}
                   />
+                  {jsonError && <div className="template-json-error">{jsonError}</div>}
                 </div>
-                <div className="template-editor-field">
-                  <label>Color</label>
-                  <input
-                    type="color"
-                    value={editForm.color || '#007acc'}
-                    onChange={(e) => setEditForm((f) => ({ ...f, color: e.target.value }))}
-                  />
-                </div>
-              </div>
+              )}
               <div className="template-manager-footer" style={{ border: 'none', padding: '8px 0 0' }}>
                 <button onClick={() => setEditingId(null)}>Cancel</button>
                 <button className="primary" onClick={commitEdit}>Save</button>

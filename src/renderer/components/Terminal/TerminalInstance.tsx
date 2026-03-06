@@ -81,6 +81,10 @@ export default function TerminalInstance({ terminalId, isVisible, isActive }: Te
       terminal.write(`\r\n\x1b[91m[Failed to start terminal: ${err instanceof Error ? err.message : String(err)}]\x1b[0m\r\n`)
     })
 
+    if (terminalInfo?.claudeCode) {
+      ipcApi.registerClaude(terminalId)
+    }
+
     if (startupCommand) {
       registerFirstDataCallback(terminalId, () => {
         setTimeout(() => {
@@ -120,6 +124,9 @@ export default function TerminalInstance({ terminalId, isVisible, isActive }: Te
       if (rafId !== null) cancelAnimationFrame(rafId)
       resizeObserver.disconnect()
       onDataDisposable.dispose()
+      if (terminalInfo?.claudeCode) {
+        ipcApi.unregisterClaude(terminalId)
+      }
       unregisterTerminal(terminalId)
       terminal.dispose()
       ipcApi.destroyPty(terminalId).catch(() => {})

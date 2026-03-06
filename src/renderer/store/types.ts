@@ -1,5 +1,7 @@
 export type TerminalId = string
 
+export type ClaudeCodeStatus = 'not-tracked' | 'idle' | 'working' | 'needs-input' | 'completed'
+
 export interface TerminalInfo {
   id: TerminalId
   title: string
@@ -9,6 +11,8 @@ export interface TerminalInfo {
   createdAt: number
   startupCommand?: string
   claudeCode?: boolean
+  claudeStatus?: ClaudeCodeStatus
+  claudeStatusTitle?: string
 }
 
 export type SplitDirection = 'horizontal' | 'vertical'
@@ -67,4 +71,5 @@ export interface TerminalState {
 
   instantiateLayout: (template: import('../../shared/template-types').LayoutTemplate) => string
   clearStartupCommand: (id: TerminalId) => void
+  setClaudeStatus: (id: TerminalId, status: ClaudeCodeStatus, contextTitle?: string) => void
 }

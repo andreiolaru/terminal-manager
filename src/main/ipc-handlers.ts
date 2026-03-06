@@ -5,6 +5,7 @@ import { TemplateStorage } from './template-storage'
 import { IPC_CHANNELS } from '../shared/ipc-types'
 import type { PtyCreateOptions } from '../shared/ipc-types'
 import type { LayoutTemplate } from '../shared/template-types'
+import type { ClaudeCodeDetector } from './claude-detector'
 
 const ALLOWED_SHELLS = new Set([
   'powershell.exe',
@@ -21,7 +22,10 @@ function getTemplateStorage(): TemplateStorage {
   return templateStorage
 }
 
-export function registerIpcHandlers(ptyManager: PtyManager): void {
+export function registerIpcHandlers(
+  ptyManager: PtyManager,
+  detector?: ClaudeCodeDetector
+): void {
   ipcMain.handle(
     IPC_CHANNELS.PTY_CREATE,
     async (_, options: PtyCreateOptions) => {
@@ -74,4 +78,13 @@ export function registerIpcHandlers(ptyManager: PtyManager): void {
   ipcMain.handle(IPC_CHANNELS.TEMPLATES_GET_PATH, async () => {
     return getTemplateStorage().getPath()
   })
+
+  ipcMain.on(IPC_CHANNELS.CLAUDE_REGISTER, (_, id: string) => {
+    detector?.register(id)
+  })
+
+  ipcMain.on(IPC_CHANNELS.CLAUDE_UNREGISTER, (_, id: string) => {
+    detector?.unregister(id)
+  })
+
 }

@@ -1,8 +1,10 @@
-import { app, BrowserWindow, dialog, Menu, session } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, Menu, session } from 'electron'
 import { join } from 'path'
 import { PtyManager } from './pty-manager'
+import { ClaudeCodeDetector } from './claude-detector'
+import { NotificationManager } from './notification-manager'
 import { registerIpcHandlers } from './ipc-handlers'
-import { SHORTCUT_NAMES } from '../shared/ipc-types'
+import { IPC_CHANNELS, SHORTCUT_NAMES } from '../shared/ipc-types'
 
 const SHORTCUT_ACCELERATORS: Record<string, string> = {
   'new-terminal': 'CmdOrCtrl+Shift+T',
@@ -17,7 +19,11 @@ const SHORTCUT_ACCELERATORS: Record<string, string> = {
   'navigate-down': 'Alt+Down',
 }
 
+app.setAppUserModelId('com.terminal-manager.app')
+
 const ptyManager = new PtyManager()
+const detector = new ClaudeCodeDetector()
+let notificationManager: NotificationManager
 const isDev = !!process.env.ELECTRON_RENDERER_URL
 
 function createWindow(): void {
@@ -61,6 +67,20 @@ function createWindow(): void {
   })
 
   ptyManager.setWindow(mainWindow)
+  ptyManager.setDetector(detector)
+
+  notificationManager = new NotificationManager(() => mainWindow)
+
+  detector.onStatusChange = (id, status, contextTitle) => {
+    if (!mainWindow.isDestroyed()) {
+      mainWindow.webContents.send(IPC_CHANNELS.CLAUDE_STATUS, id, status, contextTitle)
+    }
+    notificationManager.notify(id, status, contextTitle)
+  }
+
+  ipcMain.on(IPC_CHANNELS.NOTIFICATION_ACTIVE_TERMINAL, (_, id: string | null) => {
+    notificationManager.setActiveTerminal(id)
+  })
 
   const shortcutItems: Electron.MenuItemConstructorOptions[] = SHORTCUT_NAMES.map((name) => ({
     label: name.split('-').map(w => w[0].toUpperCase() + w.slice(1)).join(' '),
@@ -131,7 +151,7 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
-  registerIpcHandlers(ptyManager)
+  registerIpcHandlers(ptyManager, detector)
   createWindow()
 
   app.on('activate', () => {

@@ -13,6 +13,11 @@ export interface ElectronAPI {
   listTemplates(): Promise<LayoutTemplate[]>
   saveTemplates(templates: LayoutTemplate[]): Promise<void>
   getTemplatesPath(): Promise<string>
+  registerClaude(id: string): void
+  unregisterClaude(id: string): void
+  onClaudeStatus(callback: (id: string, status: string, contextTitle?: string) => void): () => void
+  onNotificationFocusTerminal(callback: (id: string) => void): () => void
+  setActiveTerminalForNotifications(id: string | null): void
 }
 
 declare global {
