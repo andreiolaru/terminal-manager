@@ -94,6 +94,24 @@ const electronAPI = {
 
   setActiveTerminalForNotifications(id: string | null): void {
     ipcRenderer.send(IPC_CHANNELS.NOTIFICATION_ACTIVE_TERMINAL, id)
+  },
+
+  confirmClose(title: string, message: string, detail: string): Promise<boolean> {
+    return ipcRenderer.invoke(IPC_CHANNELS.CONFIRM_CLOSE, title, message, detail)
+  },
+
+  onAppCloseRequested(callback: () => void): () => void {
+    const handler = (): void => { callback() }
+    ipcRenderer.on(IPC_CHANNELS.APP_CLOSE_REQUESTED, handler)
+    return () => ipcRenderer.removeListener(IPC_CHANNELS.APP_CLOSE_REQUESTED, handler)
+  },
+
+  confirmAppClose(): void {
+    ipcRenderer.send(IPC_CHANNELS.APP_CLOSE_CONFIRMED)
+  },
+
+  cancelAppClose(): void {
+    ipcRenderer.send(IPC_CHANNELS.APP_CLOSE_CANCELLED)
   }
 }
 

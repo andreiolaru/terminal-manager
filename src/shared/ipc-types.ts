@@ -15,6 +15,10 @@ export const IPC_CHANNELS = {
   CLAUDE_STATUS: 'claude:status',
   NOTIFICATION_FOCUS_TERMINAL: 'notification:focus-terminal',
   NOTIFICATION_ACTIVE_TERMINAL: 'notification:active-terminal',
+  CONFIRM_CLOSE: 'dialog:confirm-close',
+  APP_CLOSE_REQUESTED: 'app:close-requested',
+  APP_CLOSE_CONFIRMED: 'app:close-confirmed',
+  APP_CLOSE_CANCELLED: 'app:close-cancelled',
 } as const
 
 export const SHORTCUT_NAMES = [

@@ -26,6 +26,9 @@ const ptyManager = new PtyManager()
 const detector = new ClaudeCodeDetector()
 let notificationManager: NotificationManager
 const isDev = !!process.env.ELECTRON_RENDERER_URL
+let forceClose = false
+let closeTimeout: ReturnType<typeof setTimeout> | null = null
+const CLOSE_TIMEOUT_MS = 5000
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -62,13 +65,36 @@ function createWindow(): void {
     return { action: 'deny' }
   })
 
-  // M17: Deny all permission requests
-  session.defaultSession.setPermissionRequestHandler((_webContents, _permission, callback) => {
-    callback(false)
+  // M17: Deny all permission requests except clipboard-read (needed for right-click paste)
+  session.defaultSession.setPermissionRequestHandler((_webContents, permission, callback) => {
+    callback(permission === 'clipboard-read')
   })
 
   ptyManager.setWindow(mainWindow)
   ptyManager.setDetector(detector)
+
+  // Intercept window close to let renderer check for active Claude sessions
+  const doForceClose = (): void => {
+    if (closeTimeout) { clearTimeout(closeTimeout); closeTimeout = null }
+    forceClose = true
+    mainWindow.close()
+  }
+
+  mainWindow.on('close', (event) => {
+    if (!forceClose && !mainWindow.isDestroyed()) {
+      event.preventDefault()
+      if (closeTimeout) return // Already waiting for renderer response
+      mainWindow.webContents.send(IPC_CHANNELS.APP_CLOSE_REQUESTED)
+      // Safety: force close if renderer doesn't respond (crash, hang)
+      closeTimeout = setTimeout(doForceClose, CLOSE_TIMEOUT_MS)
+    }
+  })
+
+  ipcMain.on(IPC_CHANNELS.APP_CLOSE_CONFIRMED, doForceClose)
+
+  ipcMain.on(IPC_CHANNELS.APP_CLOSE_CANCELLED, () => {
+    if (closeTimeout) { clearTimeout(closeTimeout); closeTimeout = null }
+  })
 
   notificationManager = new NotificationManager(() => mainWindow)
 
@@ -117,7 +143,7 @@ function createWindow(): void {
         { label: 'New Terminal', click: (): void => sendShortcut('new-terminal') },
         { label: 'Close Terminal', click: (): void => sendShortcut('close-terminal') },
         { type: 'separator' },
-        { role: 'quit' },
+        { label: 'Quit', accelerator: 'Alt+F4', click: (): void => mainWindow.close() },
       ],
     },
     {
@@ -165,8 +191,17 @@ app.whenReady().then(() => {
 })
 
 // M11: Clean up PTYs on quit (handles force-quit, crash)
-app.on('before-quit', () => {
-  ptyManager.destroyAll()
+app.on('before-quit', (event) => {
+  if (!forceClose) {
+    // Quit was triggered externally (e.g. app.quit()) — redirect through window close confirmation
+    event.preventDefault()
+    const windows = BrowserWindow.getAllWindows()
+    if (windows.length > 0) {
+      windows[0].close()
+    }
+  } else {
+    ptyManager.destroyAll()
+  }
 })
 
 app.on('window-all-closed', () => {

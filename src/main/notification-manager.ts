@@ -24,7 +24,8 @@ export class NotificationManager {
 
     // Suppress if window is focused and this terminal is already active
     const win = this.getWindow()
-    if (win && win.isFocused() && !win.isMinimized() && this.activeTerminalId === terminalId) {
+    if (win?.isDestroyed()) return
+    if (win && win.isFocused() && !win.isMinimized()) {
       return
     }
 

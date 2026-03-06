@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import type { TerminalInfo } from '../../store/types'
 import { useTerminalStore } from '../../store/terminal-store'
+import { confirmTerminalClose } from '../../lib/claude-close-guard'
 import '../../assets/styles/claude-status.css'
 
 const statusIcons: Record<string, string> = {
@@ -52,9 +53,9 @@ export default function TerminalListItem({ terminal, isActive }: TerminalListIte
     }
   }
 
-  const handleClose = (e: React.MouseEvent): void => {
+  const handleClose = async (e: React.MouseEvent): Promise<void> => {
     e.stopPropagation()
-    removeTerminal(terminal.id)
+    if (await confirmTerminalClose(terminal.id)) removeTerminal(terminal.id)
   }
 
   const className = [
@@ -72,7 +73,7 @@ export default function TerminalListItem({ terminal, isActive }: TerminalListIte
       e.preventDefault()
       setActiveTerminal(terminal.id)
     } else if (e.key === 'Delete') {
-      removeTerminal(terminal.id)
+      confirmTerminalClose(terminal.id).then((ok) => { if (ok) removeTerminal(terminal.id) })
     }
   }
 

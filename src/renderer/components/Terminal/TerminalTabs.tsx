@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useTerminalStore } from '../../store/terminal-store'
 import { collectLeafIds } from '../../lib/tree-utils'
+import { confirmGroupClose } from '../../lib/claude-close-guard'
 import TemplateLauncher from './TemplateLauncher'
 import TemplateManager from './TemplateManager'
 import '../../assets/styles/tabs.css'
@@ -67,9 +68,9 @@ export default function TerminalTabs() {
     }
   }
 
-  const handleClose = (e: React.MouseEvent, groupId: string): void => {
+  const handleClose = async (e: React.MouseEvent, groupId: string): Promise<void> => {
     e.stopPropagation()
-    removeGroup(groupId)
+    if (await confirmGroupClose(groupId)) removeGroup(groupId)
   }
 
   return (

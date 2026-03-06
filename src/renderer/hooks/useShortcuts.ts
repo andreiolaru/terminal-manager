@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useTerminalStore } from '../store/terminal-store'
 import { onShortcutSafe, setWindowTitleSafe } from '../lib/ipc-api'
+import { confirmTerminalClose } from '../lib/claude-close-guard'
 import type { NavigationDirection } from '../store/types'
 
 export function useShortcuts(): void {
@@ -12,7 +13,11 @@ export function useShortcuts(): void {
       onShortcutSafe('close-terminal', () => {
         const s = getState()
         const group = s.groups.find((g) => g.id === s.activeGroupId)
-        if (group) s.removeTerminal(group.activeTerminalId)
+        if (group) {
+          confirmTerminalClose(group.activeTerminalId).then((ok) => {
+            if (ok) getState().removeTerminal(group.activeTerminalId)
+          })
+        }
       }),
       onShortcutSafe('split-right', () => {
         const s = getState()

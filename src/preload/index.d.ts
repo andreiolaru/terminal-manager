@@ -19,6 +19,10 @@ export interface ElectronAPI {
   onClaudeStatus(callback: (id: string, status: string, contextTitle?: string) => void): () => void
   onNotificationFocusTerminal(callback: (id: string) => void): () => void
   setActiveTerminalForNotifications(id: string | null): void
+  confirmClose(title: string, message: string, detail: string): Promise<boolean>
+  onAppCloseRequested(callback: () => void): () => void
+  confirmAppClose(): void
+  cancelAppClose(): void
 }
 
 declare global {

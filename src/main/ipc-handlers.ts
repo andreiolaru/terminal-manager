@@ -1,4 +1,4 @@
-import { ipcMain, BrowserWindow, shell } from 'electron'
+import { ipcMain, BrowserWindow, dialog, shell } from 'electron'
 import { existsSync } from 'fs'
 import { PtyManager } from './pty-manager'
 import { TemplateStorage } from './template-storage'
@@ -82,6 +82,25 @@ export function registerIpcHandlers(
   ipcMain.handle(IPC_CHANNELS.TEMPLATES_SHOW_IN_FOLDER, async () => {
     shell.showItemInFolder(getTemplateStorage().getPath())
   })
+
+  ipcMain.handle(
+    IPC_CHANNELS.CONFIRM_CLOSE,
+    async (event, title: string, message: string, detail: string): Promise<boolean> => {
+      const win = BrowserWindow.fromWebContents(event.sender)
+      if (!win) return true
+      const { response } = await dialog.showMessageBox(win, {
+        type: 'warning',
+        buttons: ['Force Close', 'Cancel'],
+        defaultId: 1,
+        cancelId: 1,
+        noLink: true,
+        title,
+        message,
+        detail,
+      })
+      return response === 0
+    }
+  )
 
   ipcMain.on(IPC_CHANNELS.CLAUDE_REGISTER, (_, id: string) => {
     detector?.register(id)

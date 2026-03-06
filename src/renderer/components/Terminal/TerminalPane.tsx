@@ -1,5 +1,6 @@
 import { memo, useCallback } from 'react'
 import { useTerminalStore } from '../../store/terminal-store'
+import { confirmTerminalClose } from '../../lib/claude-close-guard'
 import TerminalInstance from './TerminalInstance'
 import '../../assets/styles/splitpane.css'
 import '../../assets/styles/claude-status.css'
@@ -30,7 +31,9 @@ export default memo(function TerminalPane({ terminalId, groupId }: TerminalPaneP
 
   const handleSplitH = useCallback(() => splitTerminal(terminalId, 'horizontal'), [splitTerminal, terminalId])
   const handleSplitV = useCallback(() => splitTerminal(terminalId, 'vertical'), [splitTerminal, terminalId])
-  const handleClose = useCallback(() => removeTerminal(terminalId), [removeTerminal, terminalId])
+  const handleClose = useCallback(async () => {
+    if (await confirmTerminalClose(terminalId)) removeTerminal(terminalId)
+  }, [removeTerminal, terminalId])
   const handleMouseDown = useCallback(() => setActiveTerminal(terminalId), [setActiveTerminal, terminalId])
 
   const statusClass = claudeStatus && claudeStatus !== 'not-tracked'

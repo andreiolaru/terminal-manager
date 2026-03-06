@@ -5,6 +5,7 @@ import { useTerminalStore } from './store/terminal-store'
 import { usePtyIpc } from './hooks/usePtyIpc'
 import { useShortcuts } from './hooks/useShortcuts'
 import { initClaudeStatusDispatcher } from './lib/claude-status-dispatcher'
+import { confirmAppClose } from './lib/claude-close-guard'
 import { ipcApi } from './lib/ipc-api'
 
 function App() {
@@ -17,6 +18,17 @@ function App() {
   // Initialize claude status dispatcher
   useEffect(() => {
     return initClaudeStatusDispatcher()
+  }, [])
+
+  // Handle app close confirmation for active Claude sessions
+  useEffect(() => {
+    if (!ipcApi?.onAppCloseRequested) return
+    return ipcApi.onAppCloseRequested(() => {
+      confirmAppClose().then((ok) => {
+        if (ok) ipcApi.confirmAppClose()
+        else ipcApi.cancelAppClose()
+      })
+    })
   }, [])
 
   // Push active terminal changes to main for notification suppression
