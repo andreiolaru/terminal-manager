@@ -4,7 +4,8 @@ import { FitAddon } from '@xterm/addon-fit'
 import { WebglAddon } from '@xterm/addon-webgl'
 import { ipcApi } from '../../lib/ipc-api'
 import { registerTerminal, unregisterTerminal } from '../../lib/pty-dispatcher'
-import { DEFAULT_SCROLLBACK, RESIZE_DEBOUNCE_MS } from '../../lib/constants'
+import { defaultConfig } from '../../lib/config'
+import { RESIZE_DEBOUNCE_MS } from '../../lib/constants'
 import '@xterm/xterm/css/xterm.css'
 import '../../assets/styles/terminal.css'
 
@@ -26,14 +27,15 @@ export default function TerminalInstance({ terminalId, isVisible, isActive }: Te
 
     const terminal = new Terminal({
       cursorBlink: true,
-      fontSize: 14,
-      fontFamily: "'Cascadia Code', 'Consolas', monospace",
+      fontSize: defaultConfig.font.size,
+      fontFamily: defaultConfig.font.family,
       theme: {
-        background: '#1e1e1e',
-        foreground: '#cccccc',
-        cursor: '#ffffff'
+        background: defaultConfig.theme.background,
+        foreground: defaultConfig.theme.foreground,
+        cursor: defaultConfig.theme.cursor,
+        selectionBackground: defaultConfig.theme.selectionBackground
       },
-      scrollback: DEFAULT_SCROLLBACK
+      scrollback: defaultConfig.scrollback
     })
 
     const fitAddon = new FitAddon()

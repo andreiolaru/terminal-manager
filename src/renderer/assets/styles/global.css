@@ -4,24 +4,59 @@
   box-sizing: border-box;
 }
 
+:root {
+  /* Terminal */
+  --tm-background: #1e1e1e;
+  --tm-foreground: #cccccc;
+  --tm-cursor: #ffffff;
+  --tm-selection: #264f78;
+
+  /* UI Chrome */
+  --tm-sidebar-bg: #252526;
+  --tm-panel-bg: #1e1e1e;
+  --tm-titlebar-bg: #2d2d2d;
+  --tm-tabbar-bg: #252526;
+  --tm-tab-active-bg: #1e1e1e;
+  --tm-tab-inactive-bg: #2d2d2d;
+  --tm-border: #3c3c3c;
+
+  /* Text */
+  --tm-text-primary: #cccccc;
+  --tm-text-secondary: #999999;
+  --tm-text-muted: #666666;
+
+  /* Accents */
+  --tm-accent: #007acc;
+  --tm-danger: #b13a3a;
+
+  /* Interactive */
+  --tm-hover-bg: #3c3c3c;
+  --tm-list-hover-bg: #2a2d2e;
+  --tm-list-active-bg: #37373d;
+  --tm-tab-hover-bg: #333333;
+
+  /* Scrollbar */
+  --tm-scrollbar-thumb: rgba(255, 255, 255, 0.15);
+  --tm-scrollbar-thumb-hover: rgba(255, 255, 255, 0.25);
+
+  /* Allotment overrides */
+  --focus-border: var(--tm-accent);
+  --sash-size: 6px;
+  --sash-hover-size: 3px;
+}
+
 html, body, #root {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: #1e1e1e;
-  color: #cccccc;
+  background: var(--tm-background);
+  color: var(--tm-foreground);
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 ::selection {
-  background: #264f78;
+  background: var(--tm-selection);
   color: #ffffff;
-}
-
-:root {
-  --focus-border: #007acc;
-  --sash-size: 6px;
-  --sash-hover-size: 3px;
 }
 
 /* Thin, unobtrusive scrollbars — visible only on hover */
@@ -42,11 +77,11 @@ html, body, #root {
 *:hover > ::-webkit-scrollbar-thumb,
 ::-webkit-scrollbar-thumb:hover,
 *:hover::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--tm-scrollbar-thumb);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: var(--tm-scrollbar-thumb-hover);
 }
 
 ::-webkit-scrollbar-corner {

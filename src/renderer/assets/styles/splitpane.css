@@ -7,7 +7,7 @@
 }
 
 .terminal-pane.active .terminal-title-bar {
-  border-left: 2px solid #007acc;
+  border-left: 2px solid var(--tm-accent);
 }
 
 .terminal-title-bar {
@@ -16,8 +16,8 @@
   display: flex;
   align-items: center;
   padding: 0 8px;
-  background: #2d2d2d;
-  border-bottom: 1px solid #3c3c3c;
+  background: var(--tm-titlebar-bg);
+  border-bottom: 1px solid var(--tm-border);
   border-left: 2px solid transparent;
   transition: border-color 0.15s ease;
   user-select: none;
@@ -27,14 +27,14 @@
 .terminal-title-bar .title {
   flex: 1;
   font-size: 11px;
-  color: #999;
+  color: var(--tm-text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .terminal-pane.active .terminal-title-bar .title {
-  color: #cccccc;
+  color: var(--tm-text-primary);
 }
 
 .terminal-title-actions {
@@ -51,7 +51,7 @@
 .terminal-title-actions button {
   background: none;
   border: none;
-  color: #999;
+  color: var(--tm-text-secondary);
   font-size: 13px;
   width: 20px;
   height: 20px;
@@ -66,17 +66,17 @@
 
 .terminal-title-actions button:hover,
 .terminal-title-actions button:focus-visible {
-  background: #3c3c3c;
-  color: #cccccc;
+  background: var(--tm-hover-bg);
+  color: var(--tm-text-primary);
   outline: none;
 }
 
 .terminal-title-actions button:focus-visible {
-  outline: 1px solid #007acc;
+  outline: 1px solid var(--tm-accent);
 }
 
 .terminal-title-actions button.close-btn:hover {
-  background: #b13a3a;
+  background: var(--tm-danger);
   color: #ffffff;
 }
 

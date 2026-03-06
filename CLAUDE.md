@@ -79,7 +79,7 @@ Current progress is tracked here. Update as phases complete:
 - [x] **Phase 3**: Split panes (allotment + recursive tree)
 - [x] **Phase 4**: Terminal groups / tabs
 - [x] **Phase 5**: Polish + keyboard shortcuts
-- [ ] **Phase 6**: Extensibility hooks (config, theming scaffold)
+- [x] **Phase 6**: Extensibility hooks (config, theming scaffold)
 
 ## Build & Run
 

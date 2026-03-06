@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { persist, createJSONStorage } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
 import { v4 as uuid } from 'uuid'
 import type { TerminalState, TerminalGroup, NavigationDirection } from './types'
@@ -10,7 +11,15 @@ function findGroupForTerminal(groups: TerminalGroup[], terminalId: string): Term
   return groups.find((g) => containsLeaf(g.splitTree, terminalId))
 }
 
+// No-op storage — scaffold for future session persistence
+const noopStorage = createJSONStorage(() => ({
+  getItem: () => null,
+  setItem: () => {},
+  removeItem: () => {}
+}))
+
 export const useTerminalStore = create<TerminalState>()(
+  persist(
   immer((set) => ({
     terminals: {},
     groups: [],
@@ -253,5 +262,14 @@ export const useTerminalStore = create<TerminalState>()(
         useTerminalStore.getState().setActiveTerminal(targetId)
       }
     }
-  }))
+  })),
+  {
+    name: 'terminal-manager-state',
+    storage: noopStorage,
+    partialize: (state) => ({
+      nextTerminalNumber: state.nextTerminalNumber,
+      nextGroupNumber: state.nextGroupNumber
+    })
+  }
+  )
 )
