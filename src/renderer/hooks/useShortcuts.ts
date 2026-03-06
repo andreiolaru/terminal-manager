@@ -47,7 +47,7 @@ export function useShortcuts(): void {
       const group = s.groups.find((g) => g.id === s.activeGroupId)
       if (group) {
         const terminal = s.terminals[group.activeTerminalId]
-        const name = terminal?.title ?? 'Terminal'
+        const name = terminal?.name ?? 'Terminal'
         setWindowTitleSafe(`${name} - Terminal Manager`)
       } else {
         setWindowTitleSafe('Terminal Manager')

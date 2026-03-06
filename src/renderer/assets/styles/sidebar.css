@@ -25,22 +25,12 @@
   opacity: 0.5;
 }
 
-.sidebar.collapsed {
-  width: 40px;
-  min-width: 40px;
-}
-
 .sidebar-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 8px 12px;
   border-bottom: 1px solid var(--tm-border);
-}
-
-.sidebar.collapsed .sidebar-header {
-  justify-content: center;
-  padding: 8px 0;
 }
 
 .sidebar-toggle {
@@ -59,12 +49,6 @@
 .sidebar-actions {
   display: flex;
   gap: 4px;
-}
-
-.sidebar.collapsed .sidebar-actions {
-  flex-direction: column;
-  align-items: center;
-  padding: 4px 0;
 }
 
 .sidebar-btn {
@@ -168,6 +152,16 @@
 
 .terminal-list-item-status.completed {
   color: #4ec94e;
+}
+
+.terminal-list-item-info {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #b0b0b0;
+  padding-left: 2px;
+  margin-top: 1px;
 }
 
 .terminal-rename-input {

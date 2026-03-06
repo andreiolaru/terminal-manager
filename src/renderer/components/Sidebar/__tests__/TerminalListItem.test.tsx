@@ -7,7 +7,7 @@ import type { TerminalInfo } from '../../../store/types'
 
 const makeTerminal = (overrides?: Partial<TerminalInfo>): TerminalInfo => ({
   id: 'test-id-1',
-  title: 'Terminal 1',
+  name: 'Terminal 1',
   shell: 'powershell.exe',
   cwd: '',
   isAlive: true,

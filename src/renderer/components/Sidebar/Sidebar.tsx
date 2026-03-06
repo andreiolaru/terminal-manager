@@ -38,26 +38,27 @@ export default function Sidebar() {
     document.addEventListener('mouseup', onMouseUp)
   }, [])
 
+  if (collapsed) return null
+
   return (
     <aside
-      className={`sidebar${collapsed ? ' collapsed' : ''}`}
-      style={collapsed ? undefined : { width, minWidth: MIN_WIDTH }}
+      className="sidebar"
+      style={{ width, minWidth: MIN_WIDTH }}
     >
       <div className="sidebar-header">
         <button
           className="sidebar-btn sidebar-toggle"
           onClick={toggleSidebar}
-          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          title="Collapse sidebar"
+          aria-label="Collapse sidebar"
         >
-          {collapsed ? '\u25B6' : '\u25C0'}
+          {'\u25C0'}
         </button>
-        {!collapsed && <span className="sidebar-title">Terminals</span>}
-        {!collapsed && <SidebarActions />}
+        <span className="sidebar-title">Terminals</span>
+        <SidebarActions />
       </div>
-      {!collapsed && <TerminalList />}
-      {collapsed && <SidebarActions />}
-      {!collapsed && <div className="sidebar-resize-handle" onMouseDown={onMouseDown} />}
+      <TerminalList />
+      <div className="sidebar-resize-handle" onMouseDown={onMouseDown} />
     </aside>
   )
 }

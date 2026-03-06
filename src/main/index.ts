@@ -105,6 +105,12 @@ function createWindow(): void {
     notificationManager.notify(id, status, contextTitle)
   }
 
+  detector.onInfoChange = (id, model, context) => {
+    if (!mainWindow.isDestroyed()) {
+      mainWindow.webContents.send(IPC_CHANNELS.CLAUDE_INFO, id, model, context)
+    }
+  }
+
   ipcMain.on(IPC_CHANNELS.NOTIFICATION_ACTIVE_TERMINAL, (_, id: string | null) => {
     notificationManager.setActiveTerminal(id)
   })

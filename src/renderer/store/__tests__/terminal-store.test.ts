@@ -146,7 +146,7 @@ describe('terminal-store', () => {
       const id = store().addTerminal() // Terminal 2, splits into active group
 
       expect(store().terminals[id]).toBeDefined()
-      expect(store().terminals[id].title).toBe('Terminal 2')
+      expect(store().terminals[id].name).toBe('Terminal 2')
       expect(activeGroup()!.activeTerminalId).toBe(id)
       expect(activeGroup()!.splitTree.type).toBe('branch')
     })
@@ -172,7 +172,7 @@ describe('terminal-store', () => {
 
       const titles = Object.values(store().terminals)
         .sort((a, b) => a.createdAt - b.createdAt)
-        .map((t) => t.title)
+        .map((t) => t.name)
       expect(titles).toEqual(['Terminal 1', 'Terminal 2', 'Terminal 3'])
     })
   })
@@ -339,14 +339,14 @@ describe('terminal-store', () => {
       store().addGroup()
       const id = activeGroup()!.activeTerminalId
       store().renameTerminal(id, 'My Shell')
-      expect(store().terminals[id].title).toBe('My Shell')
+      expect(store().terminals[id].name).toBe('My Shell')
     })
 
     it('is a no-op for non-existent ID', () => {
       store().addGroup()
       const id = activeGroup()!.activeTerminalId
-      store().renameTerminal('non-existent', 'New Title')
-      expect(store().terminals[id].title).toBe('Terminal 1')
+      store().renameTerminal('non-existent', 'New Name')
+      expect(store().terminals[id].name).toBe('Terminal 1')
     })
   })
 
@@ -456,7 +456,7 @@ describe('terminal-store', () => {
       store().addGroup()
       const id = activeGroup()!.activeTerminalId
       store().renameTerminal(id, 'Custom')
-      expect(store().terminals[id].title).toBe('Custom')
+      expect(store().terminals[id].name).toBe('Custom')
       store().removeTerminal(id)
       expect(store().terminals[id]).toBeUndefined()
     })

@@ -4,7 +4,8 @@ export type ClaudeCodeStatus = 'not-tracked' | 'idle' | 'working' | 'needs-input
 
 export interface TerminalInfo {
   id: TerminalId
-  title: string
+  name: string
+  lastCommand?: string
   shell: string
   cwd: string
   isAlive: boolean
@@ -13,6 +14,8 @@ export interface TerminalInfo {
   claudeCode?: boolean
   claudeStatus?: ClaudeCodeStatus
   claudeStatusTitle?: string
+  claudeModel?: string
+  claudeContext?: string
   fontSize?: number
 }
 
@@ -67,7 +70,8 @@ export interface TerminalState {
   removeTerminal: (id: TerminalId) => void
   splitTerminal: (id: TerminalId, direction: SplitDirection) => void
   setActiveTerminal: (id: TerminalId) => void
-  renameTerminal: (id: TerminalId, title: string) => void
+  renameTerminal: (id: TerminalId, name: string) => void
+  setLastCommand: (id: TerminalId, command: string) => void
   setTerminalDead: (id: TerminalId) => void
 
   cycleGroup: (delta: 1 | -1) => void
@@ -76,6 +80,7 @@ export interface TerminalState {
   instantiateLayout: (template: import('../../shared/template-types').LayoutTemplate) => string
   clearStartupCommand: (id: TerminalId) => void
   setClaudeStatus: (id: TerminalId, status: ClaudeCodeStatus, contextTitle?: string) => void
+  setClaudeInfo: (id: TerminalId, model?: string, context?: string) => void
   toggleSidebar: () => void
 
   setGlobalFontSize: (size: number) => void

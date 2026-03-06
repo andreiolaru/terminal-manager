@@ -16,11 +16,9 @@
 
 .terminal-title-bar {
   position: relative;
-  height: 24px;
-  min-height: 24px;
   display: flex;
-  align-items: center;
-  padding: 0 8px;
+  align-items: flex-start;
+  padding: 4px 8px;
   background: linear-gradient(var(--tm-group-color-bg, transparent), var(--tm-group-color-bg, transparent)), var(--tm-titlebar-bg);
   border-bottom: 1px solid var(--tm-border);
   border-left: 2px solid transparent;
@@ -29,17 +27,66 @@
   gap: 4px;
 }
 
-.terminal-title-bar .title {
+/* Multi-line content: name, command, status */
+.terminal-title-content {
   flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.terminal-title-name {
   font-size: 11px;
+  font-weight: 600;
+  color: var(--tm-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 20px;
+}
+
+.terminal-pane.active .terminal-title-name {
+  color: var(--tm-text-primary);
+}
+
+.terminal-pane.dead .terminal-title-name {
+  opacity: 0.5;
+  font-style: italic;
+}
+
+.terminal-title-command {
+  font-size: 10px;
   color: var(--tm-text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.terminal-pane.active .terminal-title-bar .title {
-  color: var(--tm-text-primary);
+.terminal-title-status {
+  font-size: 10px;
+  color: var(--tm-text-muted);
+}
+
+.terminal-title-status.working {
+  color: var(--tm-accent);
+}
+
+.terminal-title-status.needs-input {
+  color: #d29922;
+}
+
+.terminal-title-status.completed {
+  color: #3fb950;
+}
+
+/* Right column: actions + info badge */
+.terminal-title-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  align-self: stretch;
+  flex-shrink: 0;
 }
 
 .terminal-title-actions {
@@ -86,9 +133,15 @@
   color: #ffffff;
 }
 
-.terminal-pane.dead .terminal-title-bar .title {
-  opacity: 0.5;
-  font-style: italic;
+.terminal-title-info-badge {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #b0b0b0;
+  white-space: nowrap;
+  padding: 0 2px;
+  margin-top: auto;
 }
 
 .terminal-content {

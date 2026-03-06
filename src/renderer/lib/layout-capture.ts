@@ -17,7 +17,7 @@ export function captureLayout(
     return {
       type: 'leaf',
       terminal: {
-        title: info.title,
+        title: info.name,
         cwd: info.cwd || undefined,
         shell: info.shell || undefined,
         claudeCode: info.claudeCode || undefined

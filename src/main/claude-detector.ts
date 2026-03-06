@@ -6,6 +6,12 @@ export type StatusChangeCallback = (
   contextTitle?: string
 ) => void
 
+export type InfoChangeCallback = (
+  id: string,
+  model: string | undefined,
+  context: string | undefined
+) => void
+
 interface TerminalState {
   status: ClaudeCodeStatus
   buffer: string
@@ -13,6 +19,8 @@ interface TerminalState {
   workingSilenceTimer: ReturnType<typeof setTimeout> | null
   lastDataTime: number
   lastTitle: string
+  model: string
+  context: string
 }
 
 // Braille spinner characters used by Claude Code (U+2800..U+28FF block)
@@ -29,6 +37,13 @@ const BUFFER_MAX = 2048
 const NEEDS_INPUT_SILENCE_MS = 500
 const COMPLETED_TO_IDLE_MS = 5000
 const WORKING_SILENCE_MS = 2000
+
+// Model: "Opus 4.6", "claude-opus-4-6", "sonnet", etc.
+const MODEL_RE = /\b(?:claude[-_ ]?)?(opus|sonnet|haiku)(?:[-_ ]*(\d+(?:\.\d+)?(?:[-_.]\d+)?))?/i
+// Context: "Ctx: 34%" or "Ctx: 34.5%"
+const CTX_RE = /Ctx:\s*(\d+(?:\.\d+)?)\s*%/i
+// Token usage fallback: "45k / 200k", "45.2k/200k"
+const TOKENS_RE = /\b(\d+(?:\.\d+)?)\s*k\s*[/\u2502|]\s*(\d+(?:\.\d+)?)\s*k\b/
 
 /**
  * Extract OSC signals from raw PTY data before ANSI stripping.
@@ -107,6 +122,7 @@ function hasInputPrompt(text: string): boolean {
 export class ClaudeCodeDetector {
   private states = new Map<string, TerminalState>()
   onStatusChange: StatusChangeCallback = () => {}
+  onInfoChange: InfoChangeCallback = () => {}
 
   register(id: string): void {
     this.states.set(id, {
@@ -115,7 +131,9 @@ export class ClaudeCodeDetector {
       silenceTimer: null,
       workingSilenceTimer: null,
       lastDataTime: 0,
-      lastTitle: ''
+      lastTitle: '',
+      model: '',
+      context: ''
     })
     this.onStatusChange(id, 'idle')
   }
@@ -180,6 +198,9 @@ export class ClaudeCodeDetector {
       }
     }
 
+    // Extract model/context info from status bar text
+    this.extractInfo(id, state, cleaned)
+
     // When working, schedule idle transition on output silence
     if (state.status === 'working') {
       this.scheduleWorkingSilence(id, state)
@@ -238,6 +259,43 @@ export class ClaudeCodeDetector {
         this.transition(id, state, 'idle')
       }
     }, COMPLETED_TO_IDLE_MS)
+  }
+
+  private extractInfo(id: string, state: TerminalState, text: string): void {
+    let changed = false
+
+    const modelMatch = text.match(MODEL_RE)
+    if (modelMatch) {
+      const family = modelMatch[1].charAt(0).toUpperCase() + modelMatch[1].slice(1).toLowerCase()
+      const version = modelMatch[2] ? ` ${modelMatch[2].replace(/[-_]/g, '.')}` : ''
+      const model = `${family}${version}`
+      if (model !== state.model) {
+        state.model = model
+        changed = true
+      }
+    }
+
+    const ctxMatch = text.match(CTX_RE)
+    if (ctxMatch) {
+      const context = `${ctxMatch[1]}%`
+      if (context !== state.context) {
+        state.context = context
+        changed = true
+      }
+    } else {
+      const tokenMatch = text.match(TOKENS_RE)
+      if (tokenMatch) {
+        const context = `${tokenMatch[1]}k/${tokenMatch[2]}k`
+        if (context !== state.context) {
+          state.context = context
+          changed = true
+        }
+      }
+    }
+
+    if (changed) {
+      this.onInfoChange(id, state.model || undefined, state.context || undefined)
+    }
   }
 
   destroy(): void {

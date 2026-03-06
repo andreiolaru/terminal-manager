@@ -13,6 +13,7 @@ export const IPC_CHANNELS = {
   CLAUDE_REGISTER: 'claude:register',
   CLAUDE_UNREGISTER: 'claude:unregister',
   CLAUDE_STATUS: 'claude:status',
+  CLAUDE_INFO: 'claude:info',
   NOTIFICATION_FOCUS_TERMINAL: 'notification:focus-terminal',
   NOTIFICATION_ACTIVE_TERMINAL: 'notification:active-terminal',
   CONFIRM_CLOSE: 'dialog:confirm-close',

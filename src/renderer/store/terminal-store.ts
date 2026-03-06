@@ -38,7 +38,7 @@ export const useTerminalStore = create<TerminalState>()(
       set((state) => {
         state.terminals[terminalId] = {
           id: terminalId,
-          title: `Terminal ${state.nextTerminalNumber}`,
+          name: `Terminal ${state.nextTerminalNumber}`,
           shell: DEFAULT_SHELL,
           cwd: '',
           isAlive: true,
@@ -129,7 +129,7 @@ export const useTerminalStore = create<TerminalState>()(
 
         state.terminals[id] = {
           id,
-          title: `Terminal ${state.nextTerminalNumber}`,
+          name: `Terminal ${state.nextTerminalNumber}`,
           shell: DEFAULT_SHELL,
           cwd: '',
           isAlive: true,
@@ -205,7 +205,7 @@ export const useTerminalStore = create<TerminalState>()(
 
         state.terminals[newId] = {
           id: newId,
-          title: `Terminal ${state.nextTerminalNumber}`,
+          name: `Terminal ${state.nextTerminalNumber}`,
           shell: DEFAULT_SHELL,
           cwd: '',
           isAlive: true,
@@ -230,10 +230,18 @@ export const useTerminalStore = create<TerminalState>()(
       })
     },
 
-    renameTerminal: (id, title): void => {
+    renameTerminal: (id, name): void => {
       set((state) => {
         if (state.terminals[id]) {
-          state.terminals[id].title = title
+          state.terminals[id].name = name
+        }
+      })
+    },
+
+    setLastCommand: (id, command): void => {
+      set((state) => {
+        if (state.terminals[id]) {
+          state.terminals[id].lastCommand = command
         }
       })
     },
@@ -317,6 +325,14 @@ export const useTerminalStore = create<TerminalState>()(
             state.terminals[id].claudeCode = true
           }
         }
+      })
+    },
+
+    setClaudeInfo: (id, model, context): void => {
+      set((state) => {
+        if (!state.terminals[id]) return
+        if (model !== undefined) state.terminals[id].claudeModel = model
+        if (context !== undefined) state.terminals[id].claudeContext = context
       })
     },
 

@@ -10,6 +10,38 @@
   z-index: 10;
 }
 
+.terminal-tabs-collapsed-actions {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  border-right: 1px solid var(--tm-border);
+  flex-shrink: 0;
+}
+
+.terminal-tabs-action-btn {
+  background: none;
+  border: none;
+  color: var(--tm-text-secondary);
+  font-size: 14px;
+  width: 28px;
+  height: 100%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.terminal-tabs-action-btn:hover {
+  background: var(--tm-hover-bg);
+  color: var(--tm-text-primary);
+}
+
+.terminal-tabs-action-btn:focus-visible {
+  outline: 1px solid var(--tm-accent);
+  outline-offset: -1px;
+}
+
 .terminal-tabs-scroll {
   display: flex;
   align-items: center;

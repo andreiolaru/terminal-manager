@@ -35,7 +35,7 @@ function useTrackedIds(): string[] {
 }
 
 function StatusBarItem({ id }: { id: string }) {
-  const title = useTerminalStore((s) => s.terminals[id]?.title ?? '')
+  const title = useTerminalStore((s) => s.terminals[id]?.name ?? '')
   const status = useTerminalStore((s) => s.terminals[id]?.claudeStatus ?? 'idle')
   const setActiveTerminal = useTerminalStore((s) => s.setActiveTerminal)
   const handleClick = useCallback(() => setActiveTerminal(id), [setActiveTerminal, id])

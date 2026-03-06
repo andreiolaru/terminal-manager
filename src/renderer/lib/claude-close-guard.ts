@@ -11,7 +11,7 @@ function getClaudeTerminalNames(terminalIds: string[]): string[] {
   const { terminals } = useTerminalStore.getState()
   return terminalIds
     .filter((id) => isClaudeActive(terminals[id]))
-    .map((id) => terminals[id].title)
+    .map((id) => terminals[id].name)
 }
 
 async function showConfirm(title: string, message: string, detail: string): Promise<boolean> {
@@ -28,7 +28,7 @@ export async function confirmTerminalClose(terminalId: string): Promise<boolean>
 
   return showConfirm(
     'Close Terminal',
-    `Claude is running in "${terminal.title}".`,
+    `Claude is running in "${terminal.name}".`,
     'Are you sure you want to close this terminal?'
   )
 }
@@ -64,7 +64,7 @@ export async function confirmAppClose(): Promise<boolean> {
     const leafIds = collectLeafIds(group.splitTree)
     const names = leafIds
       .filter((id) => isClaudeActive(terminals[id]))
-      .map((id) => terminals[id].title)
+      .map((id) => terminals[id].name)
     if (names.length > 0) {
       groupEntries.push({ label: group.label, names })
     }

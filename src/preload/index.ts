@@ -84,6 +84,14 @@ const electronAPI = {
     return () => ipcRenderer.removeListener(IPC_CHANNELS.CLAUDE_STATUS, handler)
   },
 
+  onClaudeInfo(callback: (id: string, model?: string, context?: string) => void): () => void {
+    const handler = (_event: Electron.IpcRendererEvent, id: string, model?: string, context?: string): void => {
+      callback(id, model, context)
+    }
+    ipcRenderer.on(IPC_CHANNELS.CLAUDE_INFO, handler)
+    return () => ipcRenderer.removeListener(IPC_CHANNELS.CLAUDE_INFO, handler)
+  },
+
   onNotificationFocusTerminal(callback: (id: string) => void): () => void {
     const handler = (_event: Electron.IpcRendererEvent, id: string): void => {
       callback(id)

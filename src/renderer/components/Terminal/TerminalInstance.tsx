@@ -121,7 +121,6 @@ export default function TerminalInstance({ terminalId, isVisible, isActive }: Te
       })
 
       const terminalInfo = useTerminalStore.getState().terminals[terminalId]
-      const initialTitle = terminalInfo?.title ?? ''
       const startupCommand = terminalInfo?.startupCommand
 
       ipcApi.createPty({
@@ -151,18 +150,15 @@ export default function TerminalInstance({ terminalId, isVisible, isActive }: Te
       terminal.onData((data) => {
         ipcApi.writePty(terminalId, data)
 
-        // Skip title tracking once Claude Code is active
-        if (useTerminalStore.getState().terminals[terminalId]?.claudeCode) return
-
         // Strip escape sequences (CSI, SS3, simple ESC) before tracking input
         const cleaned = data.replace(/\x1b\[[0-9;?]*[A-Za-z]/g, '')
           .replace(/\x1bO[A-Za-z]/g, '')
           .replace(/\x1b./g, '')
         for (const ch of cleaned) {
-          if (ch === '\r') {
+          if (ch === '\r' || ch === '\n') {
             const cmd = inputBuffer.trim()
             if (cmd) {
-              useTerminalStore.getState().renameTerminal(terminalId, `${initialTitle} - ${cmd}`)
+              useTerminalStore.getState().setLastCommand(terminalId, cmd)
             }
             inputBuffer = ''
           } else if (ch === '\x7f' || ch === '\b') {

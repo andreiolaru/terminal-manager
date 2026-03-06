@@ -9,11 +9,11 @@ vi.mock('../TerminalListItem', () => ({
     terminal,
     isActive
   }: {
-    terminal: { id: string; title: string }
+    terminal: { id: string; name: string }
     isActive: boolean
   }) => (
     <div data-testid={`item-${terminal.id}`} data-active={isActive}>
-      {terminal.title}
+      {terminal.name}
     </div>
   )
 }))
@@ -39,7 +39,7 @@ describe('TerminalList', () => {
       terminals: {
         b: {
           id: 'b',
-          title: 'Second',
+          name: 'Second',
           shell: '',
           cwd: '',
           isAlive: true,
@@ -47,7 +47,7 @@ describe('TerminalList', () => {
         },
         a: {
           id: 'a',
-          title: 'First',
+          name: 'First',
           shell: '',
           cwd: '',
           isAlive: true,
@@ -55,7 +55,7 @@ describe('TerminalList', () => {
         },
         c: {
           id: 'c',
-          title: 'Third',
+          name: 'Third',
           shell: '',
           cwd: '',
           isAlive: true,
@@ -97,7 +97,7 @@ describe('TerminalList', () => {
       terminals: {
         x: {
           id: 'x',
-          title: 'X',
+          name: 'X',
           shell: '',
           cwd: '',
           isAlive: true,
@@ -105,7 +105,7 @@ describe('TerminalList', () => {
         },
         y: {
           id: 'y',
-          title: 'Y',
+          name: 'Y',
           shell: '',
           cwd: '',
           isAlive: true,

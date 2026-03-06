@@ -23,7 +23,7 @@ export function instantiateLayoutNode(
     const slot = layout.terminal
     const terminal: TerminalInfo = {
       id: terminalId,
-      title: slot.title || `Terminal ${nextTerminalNumber}`,
+      name: slot.title || `Terminal ${nextTerminalNumber}`,
       shell: slot.shell || DEFAULT_SHELL,
       cwd: slot.cwd || '',
       isAlive: true,

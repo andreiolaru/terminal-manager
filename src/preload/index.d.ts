@@ -17,6 +17,7 @@ export interface ElectronAPI {
   registerClaude(id: string): void
   unregisterClaude(id: string): void
   onClaudeStatus(callback: (id: string, status: string, contextTitle?: string) => void): () => void
+  onClaudeInfo(callback: (id: string, model?: string, context?: string) => void): () => void
   onNotificationFocusTerminal(callback: (id: string) => void): () => void
   setActiveTerminalForNotifications(id: string | null): void
   confirmClose(title: string, message: string, detail: string): Promise<boolean>

@@ -28,6 +28,9 @@ function AttentionBadge({ groupId }: { groupId: string }) {
 export default function TerminalTabs() {
   const groups = useTerminalStore((s) => s.groups)
   const activeGroupId = useTerminalStore((s) => s.activeGroupId)
+  const sidebarCollapsed = useTerminalStore((s) => s.sidebarCollapsed)
+  const toggleSidebar = useTerminalStore((s) => s.toggleSidebar)
+  const addTerminal = useTerminalStore((s) => s.addTerminal)
   const setActiveGroup = useTerminalStore((s) => s.setActiveGroup)
   const addGroup = useTerminalStore((s) => s.addGroup)
   const removeGroup = useTerminalStore((s) => s.removeGroup)
@@ -75,6 +78,34 @@ export default function TerminalTabs() {
 
   return (
     <div className="terminal-tabs" role="tablist" aria-label="Terminal groups">
+      {sidebarCollapsed && (
+        <div className="terminal-tabs-collapsed-actions">
+          <button
+            className="terminal-tabs-action-btn"
+            onClick={toggleSidebar}
+            title="Expand sidebar (Ctrl+B)"
+            aria-label="Expand sidebar"
+          >
+            {'\u25B6'}
+          </button>
+          <button
+            className="terminal-tabs-action-btn"
+            onClick={() => addTerminal()}
+            title="New Terminal (Ctrl+Shift+T)"
+            aria-label="New Terminal"
+          >
+            +
+          </button>
+          <button
+            className="terminal-tabs-action-btn"
+            onClick={addGroup}
+            title="New Group"
+            aria-label="New Group"
+          >
+            &#8862;
+          </button>
+        </div>
+      )}
       <div className="terminal-tabs-scroll">
         {groups.map((group) => (
           <div

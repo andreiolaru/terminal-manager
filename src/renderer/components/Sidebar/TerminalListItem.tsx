@@ -18,12 +18,6 @@ const statusLabels: Record<string, string> = {
   completed: 'Completed',
 }
 
-function splitTitle(title: string): { name: string; command: string } {
-  const idx = title.indexOf(' - ')
-  if (idx === -1) return { name: title, command: '' }
-  return { name: title.slice(0, idx), command: title.slice(idx + 3) }
-}
-
 interface TerminalListItemProps {
   terminal: TerminalInfo
   isActive: boolean
@@ -35,7 +29,7 @@ export default function TerminalListItem({ terminal, isActive }: TerminalListIte
   const renameTerminal = useTerminalStore((s) => s.renameTerminal)
 
   const [isEditing, setIsEditing] = useState(false)
-  const [editValue, setEditValue] = useState(terminal.title)
+  const [editValue, setEditValue] = useState(terminal.name)
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -46,13 +40,13 @@ export default function TerminalListItem({ terminal, isActive }: TerminalListIte
   }, [isEditing])
 
   const handleDoubleClick = (): void => {
-    setEditValue(terminal.title)
+    setEditValue(terminal.name)
     setIsEditing(true)
   }
 
   const commitRename = (): void => {
     const trimmed = editValue.trim()
-    if (trimmed && trimmed !== terminal.title) {
+    if (trimmed && trimmed !== terminal.name) {
       renameTerminal(terminal.id, trimmed)
     }
     setIsEditing(false)
@@ -95,7 +89,6 @@ export default function TerminalListItem({ terminal, isActive }: TerminalListIte
     }
   }
 
-  const { name, command } = splitTitle(terminal.title)
   const claudeStatus = terminal.claudeStatus && terminal.claudeStatus !== 'not-tracked'
     ? terminal.claudeStatus
     : null
@@ -104,6 +97,12 @@ export default function TerminalListItem({ terminal, isActive }: TerminalListIte
       ? `${statusLabels[claudeStatus]} — ${terminal.claudeStatusTitle}`
       : statusLabels[claudeStatus])
     : null
+
+  // Claude model/context info
+  const claudeInfoParts: string[] = []
+  if (terminal.claudeModel) claudeInfoParts.push(terminal.claudeModel)
+  if (terminal.claudeContext) claudeInfoParts.push(`Ctx: ${terminal.claudeContext}`)
+  const claudeInfoText = claudeInfoParts.length > 0 ? claudeInfoParts.join(' \u00B7 ') : null
 
   return (
     <div
@@ -131,20 +130,25 @@ export default function TerminalListItem({ terminal, isActive }: TerminalListIte
             onKeyDown={handleKeyDown}
           />
         ) : (
-          <span className="terminal-list-item-name">{name}</span>
+          <span className="terminal-list-item-name">{terminal.name}</span>
         )}
-        <button className="terminal-close-btn" onClick={handleClose} title="Close terminal" aria-label={`Close ${terminal.title}`}>
+        <button className="terminal-close-btn" onClick={handleClose} title="Close terminal" aria-label={`Close ${terminal.name}`}>
           ×
         </button>
       </div>
-      {command && (
-        <div className="terminal-list-item-command" title={command}>
-          {command.length > 400 ? command.slice(0, 400) + '\u2026' : command}
+      {terminal.lastCommand && (
+        <div className="terminal-list-item-command" title={terminal.lastCommand}>
+          {terminal.lastCommand.length > 400 ? terminal.lastCommand.slice(0, 400) + '\u2026' : terminal.lastCommand}
         </div>
       )}
       {statusText && (
         <div className={`terminal-list-item-status ${claudeStatus}`}>
           {statusText}
+        </div>
+      )}
+      {claudeInfoText && (
+        <div className="terminal-list-item-info">
+          {claudeInfoText}
         </div>
       )}
     </div>

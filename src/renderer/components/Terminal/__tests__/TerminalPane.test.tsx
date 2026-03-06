@@ -28,7 +28,7 @@ describe('TerminalPane', () => {
       terminals: {
         't1': {
           id: 't1',
-          title: 'My Terminal',
+          name: 'My Terminal',
           shell: 'powershell.exe',
           cwd: '',
           isAlive: true,

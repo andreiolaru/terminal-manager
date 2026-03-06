@@ -2,7 +2,7 @@
 .claude-status-icon {
   font-size: 12px;
   flex-shrink: 0;
-  line-height: 1;
+  line-height: 20px;
 }
 
 .claude-status-icon.idle { color: #6e7681; }
