@@ -3,7 +3,7 @@ import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import { WebglAddon } from '@xterm/addon-webgl'
 import { ipcApi } from '../../lib/ipc-api'
-import { DEFAULT_SCROLLBACK } from '../../lib/constants'
+import { DEFAULT_SCROLLBACK, RESIZE_DEBOUNCE_MS } from '../../lib/constants'
 import '@xterm/xterm/css/xterm.css'
 import '../../assets/styles/terminal.css'
 
@@ -46,12 +46,7 @@ export default function TerminalInstance({ terminalId, isVisible }: TerminalInst
     terminalRef.current = terminal
     fitAddonRef.current = fitAddon
 
-    ipcApi.createPty({
-      id: terminalId,
-      cols: terminal.cols,
-      rows: terminal.rows
-    })
-
+    // C5: Register listeners BEFORE creating PTY to avoid losing initial data
     const unsubData = ipcApi.onPtyData((id, data) => {
       if (id === terminalId) {
         terminal.write(data)
@@ -64,29 +59,45 @@ export default function TerminalInstance({ terminalId, isVisible }: TerminalInst
       }
     })
 
+    // C7: Handle createPty rejection
+    ipcApi.createPty({
+      id: terminalId,
+      cols: terminal.cols,
+      rows: terminal.rows
+    }).catch((err) => {
+      terminal.write(`\r\n\x1b[91m[Failed to start terminal: ${err instanceof Error ? err.message : String(err)}]\x1b[0m\r\n`)
+    })
+
     const onDataDisposable = terminal.onData((data) => {
       ipcApi.writePty(terminalId, data)
     })
 
+    // C10: Debounce resize events
+    let resizeTimer: ReturnType<typeof setTimeout> | null = null
     const resizeObserver = new ResizeObserver(() => {
-      requestAnimationFrame(() => {
-        if (fitAddonRef.current) {
-          fitAddonRef.current.fit()
-          if (terminalRef.current) {
-            ipcApi.resizePty(terminalId, terminalRef.current.cols, terminalRef.current.rows)
+      if (resizeTimer) clearTimeout(resizeTimer)
+      resizeTimer = setTimeout(() => {
+        requestAnimationFrame(() => {
+          if (fitAddonRef.current) {
+            fitAddonRef.current.fit()
+            if (terminalRef.current) {
+              ipcApi.resizePty(terminalId, terminalRef.current.cols, terminalRef.current.rows)
+            }
           }
-        }
-      })
+        })
+      }, RESIZE_DEBOUNCE_MS)
     })
     resizeObserver.observe(containerRef.current)
 
     return () => {
+      if (resizeTimer) clearTimeout(resizeTimer)
       resizeObserver.disconnect()
       onDataDisposable.dispose()
       unsubData()
       unsubExit()
       terminal.dispose()
-      ipcApi.destroyPty(terminalId)
+      // C8: Catch destroyPty rejection (PTY may already be dead)
+      ipcApi.destroyPty(terminalId).catch(() => {})
     }
   }, [terminalId])
 

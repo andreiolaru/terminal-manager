@@ -10,21 +10,28 @@ export class PtyManager {
   }
 
   create(id: string, shell: string, cwd: string, cols: number, rows: number): void {
+    // M18: Filter out undefined env values
+    const env = Object.fromEntries(
+      Object.entries(process.env).filter((entry): entry is [string, string] => entry[1] !== undefined)
+    )
+
     const ptyProcess = pty.spawn(shell, [], {
       name: 'xterm-256color',
       cols,
       rows,
       cwd,
-      env: process.env as Record<string, string>
+      env
     })
 
     ptyProcess.onData((data) => {
       this.window?.webContents.send('pty:data', id, data)
     })
 
+    // C6: Check map membership before sending exit — destroy() removes from map before kill()
     ptyProcess.onExit(({ exitCode }) => {
-      this.window?.webContents.send('pty:exit', id, exitCode)
+      if (!this.ptys.has(id)) return
       this.ptys.delete(id)
+      this.window?.webContents.send('pty:exit', id, exitCode)
     })
 
     this.ptys.set(id, ptyProcess)
@@ -41,15 +48,18 @@ export class PtyManager {
   destroy(id: string): void {
     const p = this.ptys.get(id)
     if (p) {
-      p.kill()
+      // C6: Remove from map BEFORE kill so onExit handler is suppressed
       this.ptys.delete(id)
+      p.kill()
     }
   }
 
   destroyAll(): void {
-    for (const [, p] of this.ptys) {
+    // M12: Clear map first to suppress all onExit handlers
+    const processes = [...this.ptys.values()]
+    this.ptys.clear()
+    for (const p of processes) {
       p.kill()
     }
-    this.ptys.clear()
   }
 }

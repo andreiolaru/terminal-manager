@@ -57,8 +57,26 @@ export default function TerminalListItem({ terminal, isActive }: TerminalListIte
     .filter(Boolean)
     .join(' ')
 
+  // C11: Keyboard handler for list item activation
+  const handleItemKeyDown = (e: React.KeyboardEvent): void => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      setActiveTerminal(terminal.id)
+    } else if (e.key === 'Delete') {
+      removeTerminal(terminal.id)
+    }
+  }
+
   return (
-    <div className={className} onClick={() => setActiveTerminal(terminal.id)} onDoubleClick={handleDoubleClick}>
+    <div
+      className={className}
+      onClick={() => setActiveTerminal(terminal.id)}
+      onDoubleClick={handleDoubleClick}
+      onKeyDown={handleItemKeyDown}
+      role="option"
+      tabIndex={0}
+      aria-selected={isActive}
+    >
       {isEditing ? (
         <input
           ref={inputRef}
@@ -71,7 +89,7 @@ export default function TerminalListItem({ terminal, isActive }: TerminalListIte
       ) : (
         <span className="terminal-list-item-title">{terminal.title}</span>
       )}
-      <button className="terminal-close-btn" onClick={handleClose} title="Close terminal">
+      <button className="terminal-close-btn" onClick={handleClose} title="Close terminal" aria-label={`Close ${terminal.title}`}>
         ×
       </button>
     </div>

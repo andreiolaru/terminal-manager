@@ -10,7 +10,7 @@ export default function TerminalList() {
   )
 
   return (
-    <div className="terminal-list">
+    <div className="terminal-list" role="listbox" aria-label="Terminal sessions">
       {sortedTerminals.map((t) => (
         <TerminalListItem
           key={t.id}
