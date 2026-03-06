@@ -27,9 +27,11 @@ export class PtyManager {
       this.window?.webContents.send('pty:data', id, data)
     })
 
-    // C6: Check map membership before sending exit — destroy() removes from map before kill()
+    // Only handle exit if this ptyProcess is still the active one for this ID.
+    // After destroy(), the map entry is already deleted so get() returns undefined !== ptyProcess.
+    // After a split re-creates the same ID, get() returns the NEW process !== this old one.
     ptyProcess.onExit(({ exitCode }) => {
-      if (!this.ptys.has(id)) return
+      if (this.ptys.get(id) !== ptyProcess) return
       this.ptys.delete(id)
       this.window?.webContents.send('pty:exit', id, exitCode)
     })

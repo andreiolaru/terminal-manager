@@ -131,6 +131,31 @@ describe('PtyManager', () => {
     })
   })
 
+  describe('destroy then re-create same ID (split race)', () => {
+    it('old PTY exit does not kill the new PTY', () => {
+      manager.create('t1', 'sh', '/tmp', 80, 24)
+      const oldPty = lastSpawnedPty
+
+      // Destroy old PTY (simulates TerminalInstance unmount cleanup)
+      manager.destroy('t1')
+      expect(oldPty.kill).toHaveBeenCalled()
+
+      // Re-create with same ID (simulates TerminalInstance remount after split)
+      manager.create('t1', 'sh', '/tmp', 80, 24)
+      const newPty = lastSpawnedPty
+
+      // Old PTY's onExit fires late (async kill completion)
+      oldPty._emit('exit', { exitCode: 0 })
+
+      // The exit should NOT have removed the new PTY from the map
+      manager.write('t1', 'hello')
+      expect(newPty.write).toHaveBeenCalledWith('hello')
+
+      // Should NOT have sent pty:exit for the re-created terminal
+      expect(mockSend).not.toHaveBeenCalledWith('pty:exit', 't1', 0)
+    })
+  })
+
   describe('destroyAll', () => {
     it('kills all PTYs and clears map', () => {
       manager.create('t1', 'sh', '/tmp', 80, 24)
