@@ -36,6 +36,7 @@ export interface TerminalGroup {
 export interface TerminalState {
   terminals: Record<TerminalId, TerminalInfo>
   activeTerminalId: TerminalId | null
+  nextTerminalNumber: number
 
   addTerminal: () => TerminalId
   removeTerminal: (id: TerminalId) => void

@@ -8,6 +8,7 @@ export const useTerminalStore = create<TerminalState>()(
   immer((set) => ({
     terminals: {},
     activeTerminalId: null,
+    nextTerminalNumber: 1,
 
     addTerminal: (): string => {
       const id = uuid()
@@ -15,13 +16,14 @@ export const useTerminalStore = create<TerminalState>()(
       set((state) => {
         state.terminals[id] = {
           id,
-          title: `Terminal ${Object.keys(state.terminals).length + 1}`,
+          title: `Terminal ${state.nextTerminalNumber}`,
           shell: DEFAULT_SHELL,
           cwd: '',
           isAlive: true,
           createdAt: now
         }
         state.activeTerminalId = id
+        state.nextTerminalNumber++
       })
       return id
     },
