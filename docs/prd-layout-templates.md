@@ -6,20 +6,23 @@ Layout templates let you launch a pre-configured terminal group in one click —
 
 **Example**: A "Backend Dev" template opens a 3x2 grid — top row has API server, database watcher, and log tailer; bottom row has three shells at different repo directories. The group tab shows a server icon in teal, and the pane backgrounds carry a faint teal-to-black gradient.
 
+Template slots can optionally mark terminals as Claude Code sessions (`claudeCode: true`) — see [prd-claude-code-integration.md](./prd-claude-code-integration.md) for status tracking, notifications, and visual indicators.
+
 ---
 
 ## Data Model
 
 ### Template Definition
 
-Templates are stored as a JSON array in a user config file (`~/.terminal-manager/templates.json` or `%APPDATA%/terminal-manager/templates.json`). Each template describes a layout tree and group appearance.
+Templates are stored as a JSON array in a user config file (`%APPDATA%/terminal-manager/templates.json`). Each template describes a layout tree and group appearance.
 
 ```typescript
 interface TerminalSlot {
   title: string
   cwd?: string                // absolute path; defaults to user home
   shell?: string              // override DEFAULT_SHELL (e.g., "bash.exe", "cmd.exe")
-  startupCommand?: string     // run after shell is ready (e.g., "npm run dev")
+  startupCommand?: string     // run after shell is ready (e.g., "claude", "npm run dev")
+  claudeCode?: boolean        // mark for status tracking (see Claude Code Integration PRD)
 }
 
 interface LayoutLeaf {
@@ -40,7 +43,7 @@ type LayoutNode = LayoutLeaf | LayoutBranch
 interface LayoutTemplate {
   id: string                  // uuid, generated on creation
   name: string                // e.g., "Backend Dev"
-  icon?: string               // emoji or short text (e.g., "🖥", "BE")
+  icon?: string               // emoji or short text (e.g., "BE", "CC")
   color?: string              // hex accent color for tab + title bars (e.g., "#2d8a6e")
   backgroundGradient?: {
     from: string              // dark color, close to black (e.g., "#0a1a14")
@@ -48,63 +51,6 @@ interface LayoutTemplate {
     angle?: number            // CSS gradient angle in degrees (default: 135)
   }
   layout: LayoutNode
-}
-```
-
-### 3x2 Grid Example
-
-```
-+----------+----------+----------+
-|  API     |  Worker  |  Logs    |
-|  Server  |  Process |  Tailer  |
-+----------+----------+----------+
-|  Shell   |  Shell   |  Shell   |
-|  /api    |  /worker |  /infra  |
-+----------+----------+----------+
-```
-
-```json
-{
-  "id": "abc-123",
-  "name": "Backend Dev",
-  "icon": "BE",
-  "color": "#2d8a6e",
-  "backgroundGradient": {
-    "from": "#0a1a14",
-    "to": "#0d0d0d",
-    "angle": 135
-  },
-  "layout": {
-    "type": "branch",
-    "direction": "horizontal",
-    "ratio": 0.333,
-    "first": {
-      "type": "branch",
-      "direction": "vertical",
-      "ratio": 0.5,
-      "first": { "type": "leaf", "terminal": { "title": "API Server", "cwd": "C:/projects/api", "startupCommand": "npm run dev" } },
-      "second": { "type": "leaf", "terminal": { "title": "Shell /api", "cwd": "C:/projects/api" } }
-    },
-    "second": {
-      "type": "branch",
-      "direction": "horizontal",
-      "ratio": 0.5,
-      "first": {
-        "type": "branch",
-        "direction": "vertical",
-        "ratio": 0.5,
-        "first": { "type": "leaf", "terminal": { "title": "Worker Process", "cwd": "C:/projects/worker", "startupCommand": "npm run worker" } },
-        "second": { "type": "leaf", "terminal": { "title": "Shell /worker", "cwd": "C:/projects/worker" } }
-      },
-      "second": {
-        "type": "branch",
-        "direction": "vertical",
-        "ratio": 0.5,
-        "first": { "type": "leaf", "terminal": { "title": "Log Tailer", "cwd": "C:/projects/infra", "startupCommand": "tail -f logs/app.log" } },
-        "second": { "type": "leaf", "terminal": { "title": "Shell /infra", "cwd": "C:/projects/infra" } }
-      }
-    }
-  }
 }
 ```
 
@@ -119,7 +65,7 @@ interface TerminalGroup {
   splitTree: SplitNode
   activeTerminalId: TerminalId
 
-  // New — visual identity (set when created from a template, editable after)
+  // Visual identity (set when created from a template, editable after)
   icon?: string
   color?: string
   backgroundGradient?: {
@@ -130,7 +76,19 @@ interface TerminalGroup {
 }
 ```
 
-These are copied from the template at instantiation time, then owned by the group (editing the template later doesn't affect running groups).
+These are copied from the template at instantiation time, then owned by the group.
+
+### 3x2 Grid Example
+
+```
++----------+----------+----------+
+|  API     |  Worker  |  Logs    |
+|  Server  |  Process |  Tailer  |
++----------+----------+----------+
+|  Shell   |  Shell   |  Shell   |
+|  /api    |  /worker |  /infra  |
++----------+----------+----------+
+```
 
 ---
 
@@ -166,31 +124,24 @@ When a group is instantiated from a template, each terminal's `startupCommand` i
 2. Wait for the first `pty:data` event (shell prompt is ready)
 3. Write `startupCommand + '\r'` to the PTY via `pty:write`
 
-This is a one-shot fire — the command is not retried or tracked. If the shell isn't ready yet (rare edge case), a small delay (200-500ms) after `pty:create` resolves is an acceptable fallback.
+For Claude Code terminals (`claudeCode: true`), after the startup command writes `claude\r`, the main process also calls `claudeCodeDetector.register(terminalId)` to begin status tracking.
 
 ### Store Action
 
 ```typescript
 // New store action
-instantiateTemplate: (templateId: string) => string  // returns groupId
-
-// Or directly from a LayoutTemplate object
-instantiateLayout: (template: LayoutTemplate) => string
+instantiateLayout: (template: LayoutTemplate) => string  // returns groupId
 ```
 
 This action:
-1. Walks the `LayoutNode` tree, creating a `TerminalInfo` for each leaf (with `title`, `shell`, `cwd` from the slot)
+1. Walks the `LayoutNode` tree, creating a `TerminalInfo` for each leaf (with `title`, `shell`, `cwd`, `claudeCode` from the slot)
 2. Builds a corresponding `SplitNode` tree (same shape, but with generated terminal IDs instead of `TerminalSlot` objects)
 3. Creates a `TerminalGroup` with the template's `name`, `icon`, `color`, and `backgroundGradient`
-4. Stores `startupCommand` per terminal (transient — not in `TerminalInfo`, passed to the PTY hook)
+4. Returns startup commands to the PTY creation layer
 
 ### Startup Command Delivery
 
-Option A — **Store a pending command map**: The store action returns a `Map<TerminalId, string>` of startup commands. The component that creates PTYs (`usePtyIpc` or `TerminalInstance`) checks this map after PTY creation and writes the command.
-
-Option B — **Extend `TerminalInfo` with `startupCommand?: string`**: Simpler. The field is consumed once by `usePtyIpc`/`TerminalInstance` on PTY creation, then cleared. This keeps everything in the store.
-
-**Recommendation**: Option B. Add `startupCommand?: string` to `TerminalInfo`. The `usePtyIpc` hook writes it after the first `pty:data` callback and then calls `clearStartupCommand(id)` so it's not re-executed.
+Add `startupCommand?: string` to `TerminalInfo`. The `TerminalInstance` component writes it after the first `pty:data` event, then clears it via `clearStartupCommand(id)`.
 
 ---
 
@@ -198,60 +149,51 @@ Option B — **Extend `TerminalInfo` with `startupCommand?: string`**: Simpler. 
 
 ### Template Launcher
 
-A new panel/dropdown accessible from the tab bar or sidebar. Two options for placement:
-
-**Option A — Tab bar dropdown** (recommended): A dropdown button next to the "+" tab button. Clicking it shows a list of saved templates. Clicking a template instantiates it.
+A dropdown button next to the "+" tab button:
 
 ```
 [Group 1] [Group 2] [+] [v Templates]
-                          ├─ Backend Dev    (BE)
-                          ├─ Frontend Dev   (FE)
-                          ├─ DevOps         (DO)
+                          ├─ Backend Dev      (BE)
+                          ├─ Frontend Dev     (FE)
+                          ├─ 2x2 Grid         (##)
+                          ├─ ──────────────────────
                           └─ Manage Templates...
 ```
 
-**Option B — Sidebar section**: A collapsible "Templates" section in the sidebar above the terminal list.
-
 ### Template Manager
 
-"Manage Templates..." opens a modal or dedicated panel where the user can:
+"Manage Templates..." opens a modal where the user can:
 
 - **View** all templates as cards showing name, icon, color preview, layout diagram
 - **Create** a new template (form-based or "Save current layout as template")
 - **Edit** a template (modify name, icon, color, gradient, terminal slots)
-- **Delete** a template
-- **Duplicate** a template
+- **Delete** / **Duplicate** a template
 - **Import/Export** (copy JSON to clipboard, or open the file in an external editor)
 
 #### "Save Current Layout as Template"
 
-A quick way to template-ify an existing group:
-1. User right-clicks a group tab or uses a menu action
-2. The current group's split tree is walked, converting each `SplitLeaf` back into a `TerminalSlot` (using the terminal's current `title`, `cwd`, empty `startupCommand`)
-3. The group's visual properties (`icon`, `color`, `backgroundGradient`) are copied
-4. User is prompted to name the template
-5. Template is saved
+1. User right-clicks a group tab -> "Save as Template"
+2. Current split tree is walked, converting each `SplitLeaf` into a `TerminalSlot`
+3. Group visual properties are copied
+4. User names the template -> saved
 
 ### Group Tab Visual Changes
 
-The group tab bar needs to render the new visual properties:
-
 ```
-[BE Backend Dev] [FE Frontend Dev] [+] [v]
+[BE Backend Dev] [FE Frontend] [+] [v]
  ^icon  ^label    ^icon  ^label
- teal background   blue background
+ teal accent       blue accent
 ```
 
-- **Icon**: Rendered before the label in the tab, small and monospace
-- **Color**: Applied as the tab's accent/border-bottom color (replaces the default `#007acc` blue)
-- **Background gradient**: Applied to the `.terminal-group-container` as a subtle CSS `linear-gradient` background. Terminals render on top with their normal xterm background. The gradient shows through in the title bars and any chrome/padding between panes.
+- **Icon**: Before the label, small and monospace
+- **Color**: Tab accent/border-bottom color (replaces the default `#007acc` blue)
+- **Background gradient**: Applied to `.terminal-group-container`
 
 ### Title Bar Tinting
 
-Each `TerminalPane` title bar (`terminal-title-bar`) gets a subtle tint from the group's `color`:
+Each `TerminalPane` title bar gets a subtle tint from the group's `color`:
 
 ```css
-/* If group has color, override title bar background */
 .terminal-title-bar {
   background: var(--group-color-bg, #2d2d2d);
 }
@@ -265,10 +207,6 @@ The tint is very subtle — mix the group color at ~10-15% opacity with the defa
 
 The background gradient is intentionally subtle. All colors should be very close to black (`#0d0d0d` to `#1a1a1a` range). The gradient serves as a visual identity cue, not a distraction.
 
-### Application
-
-The gradient is set as a CSS `linear-gradient` on the `.terminal-group-container`:
-
 ```css
 .terminal-group-container {
   background: linear-gradient(
@@ -279,7 +217,7 @@ The gradient is set as a CSS `linear-gradient` on the `.terminal-group-container
 }
 ```
 
-CSS custom properties are set inline on the container div via React:
+CSS custom properties set inline via React:
 
 ```tsx
 <div
@@ -295,12 +233,7 @@ CSS custom properties are set inline on the container div via React:
 >
 ```
 
-The gradient is visible in:
-- Pane title bars (via `--group-color-bg`)
-- Split divider/sash gaps (thin lines between panes)
-- The outer container behind all panes
-
-The xterm terminal area itself remains solid black (`#000` or `#0d0d0d`) — the gradient does NOT show through the terminal text area.
+The gradient is visible in pane title bars (via `--group-color-bg`), split divider/sash gaps, and the outer container. The xterm terminal area itself remains solid black.
 
 ---
 
@@ -308,58 +241,57 @@ The xterm terminal area itself remains solid black (`#000` or `#0d0d0d`) — the
 
 ### Step 1: Types & Config
 
-1. Add `LayoutTemplate`, `LayoutNode`, `LayoutLeaf`, `LayoutBranch`, `TerminalSlot` types to a new `src/renderer/store/template-types.ts`
+1. Add `LayoutTemplate`, `LayoutNode`, `LayoutLeaf`, `LayoutBranch`, `TerminalSlot` types to `src/renderer/store/template-types.ts`
 2. Extend `TerminalGroup` with optional `icon`, `color`, `backgroundGradient`
-3. Extend `TerminalInfo` with optional `startupCommand`
-4. Add template IPC channels to preload API
+3. Extend `TerminalInfo` with `startupCommand`, `claudeCode`
+4. Add template IPC channels to `src/shared/ipc-types.ts`
 
 ### Step 2: Template Storage (Main Process)
 
-1. Add `src/main/template-manager.ts` — reads/writes `templates.json` from app data dir
+1. Create `src/main/template-manager.ts` — reads/writes `templates.json`
 2. Register IPC handlers for `templates:list`, `templates:save`, `templates:get-path`
 3. Create default empty file on first launch
 
 ### Step 3: Template Instantiation (Store)
 
-1. Add `instantiateTemplate(template: LayoutTemplate): string` to the store
-2. Implement tree walker that converts `LayoutNode` → `SplitNode` + creates `TerminalInfo` entries
-3. Create the group with visual properties from the template
+1. Add `instantiateLayout(template: LayoutTemplate): string` to the store
+2. Implement tree walker: `LayoutNode` -> `SplitNode` + `TerminalInfo` entries
+3. Create group with visual properties
+4. Add `clearStartupCommand(id)` action
 
 ### Step 4: Startup Command Execution
 
-1. Add `startupCommand?: string` to `TerminalInfo`
-2. Add `clearStartupCommand(id: TerminalId): void` action
-3. In `usePtyIpc` or `TerminalInstance`, after first `pty:data` event, write `startupCommand + '\r'` and clear it
+1. In `TerminalInstance`, after first `pty:data`, write `startupCommand + '\r'` and clear it
+2. After startup command for Claude Code terminals, send `claude:register` to main process
 
 ### Step 5: Group Visual Properties (CSS)
 
-1. Update `TerminalPanel.tsx` to pass CSS custom properties to group containers
+1. Update `TerminalPanel.tsx` — CSS custom properties on group containers
 2. Update `tabs.css` — tab icon rendering, per-group accent color
 3. Update `splitpane.css` — title bar tinting via `--group-color-bg`
-4. Add `colorUtils.ts` with `mixColor()` helper (simple linear interpolation in RGB)
-5. Update `TerminalTabs.tsx` to render icon and color
+4. Add `src/renderer/lib/color-utils.ts` — `mixColor()` helper
+5. Update `TerminalTabs.tsx` — render icon and color
 
 ### Step 6: Template Launcher UI
 
-1. Add template dropdown button next to the "+" in the tab bar
+1. Add template dropdown button next to "+" in tab bar
 2. Fetch templates from main process on dropdown open
-3. Click template → call `instantiateTemplate()`
-4. "Manage Templates..." link at the bottom
+3. Click template -> `instantiateLayout()`
+4. "Manage Templates..." link
 
 ### Step 7: Template Manager
 
-1. Build template list/card view
-2. Create/edit form: name, icon, color picker, gradient color pickers, angle slider
-3. Layout editor: visual tree builder or JSON editor
-4. "Save current layout as template" action on group tab context menu
-5. Delete / duplicate actions
+1. Build template list/card view modal
+2. Create/edit form: name, icon, color picker, gradient pickers, terminal slot editor
+3. "Save current layout as template" on group tab context menu
+4. Delete / duplicate actions
 
 ### Step 8: Tests
 
-1. Template tree walker (LayoutNode → SplitNode conversion) — pure function, unit testable
+1. Template tree walker (`LayoutNode` -> `SplitNode` conversion) — pure function, unit testable
 2. Template file read/write (main process)
-3. `instantiateTemplate` store action
-4. Startup command delivery in `usePtyIpc`
+3. `instantiateLayout` store action
+4. Startup command delivery
 5. Visual property rendering (CSS custom properties applied correctly)
 
 ---
@@ -369,11 +301,11 @@ The xterm terminal area itself remains solid black (`#000` or `#0d0d0d`) — the
 ```json
 [
   {
-    "id": "tpl-backend",
-    "name": "Backend Dev",
-    "icon": "BE",
-    "color": "#2d8a6e",
-    "backgroundGradient": { "from": "#0a1a14", "to": "#0d0d0d", "angle": 135 },
+    "id": "tpl-multi-claude",
+    "name": "Multi-Repo Claude",
+    "icon": "CC",
+    "color": "#8b5cf6",
+    "backgroundGradient": { "from": "#0f0a1a", "to": "#0d0d0d", "angle": 135 },
     "layout": {
       "type": "branch",
       "direction": "horizontal",
@@ -382,8 +314,8 @@ The xterm terminal area itself remains solid black (`#000` or `#0d0d0d`) — the
         "type": "branch",
         "direction": "vertical",
         "ratio": 0.5,
-        "first": { "type": "leaf", "terminal": { "title": "API Server", "cwd": "C:/projects/api", "startupCommand": "npm run dev" } },
-        "second": { "type": "leaf", "terminal": { "title": "Shell", "cwd": "C:/projects/api" } }
+        "first": { "type": "leaf", "terminal": { "title": "API Claude", "cwd": "C:/projects/api", "startupCommand": "claude", "claudeCode": true } },
+        "second": { "type": "leaf", "terminal": { "title": "Shell /api", "cwd": "C:/projects/api" } }
       },
       "second": {
         "type": "branch",
@@ -393,41 +325,41 @@ The xterm terminal area itself remains solid black (`#000` or `#0d0d0d`) — the
           "type": "branch",
           "direction": "vertical",
           "ratio": 0.5,
-          "first": { "type": "leaf", "terminal": { "title": "Worker", "cwd": "C:/projects/worker", "startupCommand": "npm run worker" } },
-          "second": { "type": "leaf", "terminal": { "title": "Shell", "cwd": "C:/projects/worker" } }
+          "first": { "type": "leaf", "terminal": { "title": "Worker Claude", "cwd": "C:/projects/worker", "startupCommand": "claude", "claudeCode": true } },
+          "second": { "type": "leaf", "terminal": { "title": "Shell /worker", "cwd": "C:/projects/worker" } }
         },
         "second": {
           "type": "branch",
           "direction": "vertical",
           "ratio": 0.5,
-          "first": { "type": "leaf", "terminal": { "title": "Logs", "cwd": "C:/projects/infra", "startupCommand": "tail -f logs/app.log" } },
-          "second": { "type": "leaf", "terminal": { "title": "Shell", "cwd": "C:/projects/infra" } }
+          "first": { "type": "leaf", "terminal": { "title": "Infra Claude", "cwd": "C:/projects/infra", "startupCommand": "claude", "claudeCode": true } },
+          "second": { "type": "leaf", "terminal": { "title": "Shell /infra", "cwd": "C:/projects/infra" } }
         }
       }
     }
   },
   {
-    "id": "tpl-frontend",
-    "name": "Frontend",
-    "icon": "FE",
-    "color": "#6e8ad4",
-    "backgroundGradient": { "from": "#0d1020", "to": "#0d0d0d", "angle": 160 },
+    "id": "tpl-backend",
+    "name": "Backend Dev",
+    "icon": "BE",
+    "color": "#2d8a6e",
+    "backgroundGradient": { "from": "#0a1a14", "to": "#0d0d0d", "angle": 135 },
     "layout": {
       "type": "branch",
       "direction": "horizontal",
       "ratio": 0.5,
-      "first": { "type": "leaf", "terminal": { "title": "Dev Server", "cwd": "C:/projects/frontend", "startupCommand": "npm run dev" } },
+      "first": { "type": "leaf", "terminal": { "title": "API Server", "cwd": "C:/projects/api", "startupCommand": "npm run dev" } },
       "second": {
         "type": "branch",
         "direction": "vertical",
         "ratio": 0.5,
-        "first": { "type": "leaf", "terminal": { "title": "Tests", "cwd": "C:/projects/frontend", "startupCommand": "npm run test:watch" } },
-        "second": { "type": "leaf", "terminal": { "title": "Shell", "cwd": "C:/projects/frontend" } }
+        "first": { "type": "leaf", "terminal": { "title": "Claude Dev", "cwd": "C:/projects/api", "startupCommand": "claude", "claudeCode": true } },
+        "second": { "type": "leaf", "terminal": { "title": "Shell", "cwd": "C:/projects/api" } }
       }
     }
   },
   {
-    "id": "tpl-simple-grid",
+    "id": "tpl-2x2-grid",
     "name": "2x2 Grid",
     "icon": "##",
     "color": "#8a6e2d",
@@ -473,14 +405,15 @@ The xterm terminal area itself remains solid black (`#000` or `#0d0d0d`) — the
 
 | File | Changes |
 |------|---------|
-| `src/renderer/store/types.ts` | Add `icon`, `color`, `backgroundGradient` to `TerminalGroup`; add `startupCommand` to `TerminalInfo` |
-| `src/renderer/store/terminal-store.ts` | Add `instantiateTemplate()`, `clearStartupCommand()` actions |
-| `src/preload/index.ts` | Add `templates:list`, `templates:save`, `templates:get-path` IPC bridge |
-| `src/preload/index.d.ts` | Type declarations for template IPC |
+| `src/shared/ipc-types.ts` | Add template IPC channel constants |
+| `src/renderer/store/types.ts` | Add `icon`, `color`, `backgroundGradient` to `TerminalGroup`; add `startupCommand`, `claudeCode` to `TerminalInfo` |
+| `src/renderer/store/terminal-store.ts` | Add `instantiateLayout()`, `clearStartupCommand()` actions |
 | `src/main/ipc-handlers.ts` | Register template IPC handlers |
+| `src/preload/index.ts` | Add template IPC bridge methods |
+| `src/preload/index.d.ts` | Type declarations for template IPC |
 | `src/renderer/components/Terminal/TerminalTabs.tsx` | Render group icon + color, add template launcher button |
 | `src/renderer/components/Terminal/TerminalPanel.tsx` | Pass CSS custom properties for gradient/color to group containers |
-| `src/renderer/hooks/usePtyIpc.ts` | Execute startup command after first `pty:data` |
+| `src/renderer/components/Terminal/TerminalInstance.tsx` | Execute startup command after first `pty:data` |
 | `src/renderer/assets/styles/tabs.css` | Tab icon, per-group accent color via CSS vars |
 | `src/renderer/assets/styles/splitpane.css` | Title bar tinting via `--group-color-bg` |
 | `src/renderer/assets/styles/terminal.css` | Group container gradient background |
@@ -500,7 +433,9 @@ The xterm terminal area itself remains solid black (`#000` or `#0d0d0d`) — the
 **Out of scope (future):**
 - Template sharing/import from URL
 - Template marketplace
-- Per-terminal color/theme overrides (beyond the group-level gradient)
+- Per-terminal color/theme overrides (beyond group-level gradient)
 - Template variables/placeholders (e.g., `${projectDir}`)
 - Auto-launch templates on app start
 - Template keyboard shortcuts
+
+**Related:** [Claude Code Integration PRD](./prd-claude-code-integration.md) — status detection, notifications, status icons

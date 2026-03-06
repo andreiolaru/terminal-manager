@@ -198,7 +198,7 @@ describe('terminal-store', () => {
       store().addGroup()
       const id1 = activeGroup()!.activeTerminalId
       store().addTerminal() // id2 becomes active
-      store().removeTerminal(store().activeGroup?.activeTerminalId ?? activeGroup()!.activeTerminalId)
+      store().removeTerminal(activeGroup()!.activeTerminalId)
       // Active terminal should be reassigned to remaining
       expect(activeGroup()!.activeTerminalId).toBe(id1)
     })
@@ -363,6 +363,77 @@ describe('terminal-store', () => {
       const id = activeGroup()!.activeTerminalId
       store().setTerminalDead('non-existent')
       expect(store().terminals[id].isAlive).toBe(true)
+    })
+  })
+
+  describe('cycleGroup', () => {
+    it('cycles forward through groups', () => {
+      const g1 = store().addGroup()
+      const g2 = store().addGroup()
+      const g3 = store().addGroup()
+
+      store().setActiveGroup(g1)
+      store().cycleGroup(1)
+      expect(store().activeGroupId).toBe(g2)
+
+      store().cycleGroup(1)
+      expect(store().activeGroupId).toBe(g3)
+
+      store().cycleGroup(1)
+      expect(store().activeGroupId).toBe(g1) // wraps around
+    })
+
+    it('cycles backward through groups', () => {
+      const g1 = store().addGroup()
+      store().addGroup()
+      store().addGroup()
+
+      store().setActiveGroup(g1)
+      store().cycleGroup(-1)
+      expect(store().activeGroupId).not.toBe(g1) // wraps to last
+    })
+
+    it('is a no-op with 0 or 1 groups', () => {
+      store().cycleGroup(1) // 0 groups
+      expect(store().activeGroupId).toBeNull()
+
+      const g1 = store().addGroup()
+      store().cycleGroup(1) // 1 group
+      expect(store().activeGroupId).toBe(g1)
+    })
+  })
+
+  describe('navigatePane', () => {
+    it('navigates between split panes', () => {
+      store().addGroup()
+      const id1 = activeGroup()!.activeTerminalId
+      store().splitTerminal(id1, 'horizontal')
+      const id2 = activeGroup()!.activeTerminalId
+
+      // id2 is active (right), navigate left should go to id1
+      store().navigatePane('left')
+      expect(activeGroup()!.activeTerminalId).toBe(id1)
+
+      // navigate right should go back to id2
+      store().navigatePane('right')
+      expect(activeGroup()!.activeTerminalId).toBe(id2)
+    })
+
+    it('is a no-op at boundary', () => {
+      store().addGroup()
+      const id1 = activeGroup()!.activeTerminalId
+      store().splitTerminal(id1, 'horizontal')
+
+      store().setActiveTerminal(id1) // leftmost
+      store().navigatePane('left') // boundary
+      expect(activeGroup()!.activeTerminalId).toBe(id1)
+    })
+
+    it('is a no-op with single pane', () => {
+      store().addGroup()
+      const id1 = activeGroup()!.activeTerminalId
+      store().navigatePane('right')
+      expect(activeGroup()!.activeTerminalId).toBe(id1)
     })
   })
 

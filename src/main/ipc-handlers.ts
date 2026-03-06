@@ -1,4 +1,4 @@
-import { ipcMain } from 'electron'
+import { ipcMain, BrowserWindow } from 'electron'
 import { existsSync } from 'fs'
 import { PtyManager } from './pty-manager'
 import { IPC_CHANNELS } from '../shared/ipc-types'
@@ -49,5 +49,9 @@ export function registerIpcHandlers(ptyManager: PtyManager): void {
 
   ipcMain.handle(IPC_CHANNELS.PTY_DESTROY, async (_, id: string) => {
     ptyManager.destroy(id)
+  })
+
+  ipcMain.on(IPC_CHANNELS.WINDOW_SET_TITLE, (event, title: string) => {
+    BrowserWindow.fromWebContents(event.sender)?.setTitle(title)
   })
 }

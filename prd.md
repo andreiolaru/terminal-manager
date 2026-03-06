@@ -350,7 +350,7 @@ Debounce `resizePty` calls (50-100ms) during split drag to avoid flooding the PT
 - `TerminalPane` receives `groupId` prop for per-group `isActive`/`isVisible` selectors
 - **Verified**: Groups created/switched/closed, independent split layouts, scrollback preserved across switches
 
-### Phase 5: Polish + Keyboard Shortcuts
+### Phase 5: Polish + Keyboard Shortcuts [COMPLETE]
 - Shortcuts: `Ctrl+Shift+T` (new), `Ctrl+Shift+W` (close), `Ctrl+Shift+D` (split right), `Ctrl+Shift+E` (split down), `Ctrl+Tab` (cycle groups), `Alt+Arrow` (navigate panes)
 - Sidebar styling (hover, active indicator, dead terminal)
 - Focused pane border highlight

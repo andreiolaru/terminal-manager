@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { splitNode, removeNode, collectLeafIds, containsLeaf } from '../tree-utils'
+import { splitNode, removeNode, collectLeafIds, containsLeaf, findAdjacentTerminal } from '../tree-utils'
 import type { SplitNode } from '../../store/types'
 
 const leaf = (id: string): SplitNode => ({ type: 'leaf', terminalId: id })
@@ -172,6 +172,129 @@ describe('tree-utils', () => {
         ratio: 0.5
       }
       expect(collectLeafIds(tree)).toEqual(['a', 'b', 'c'])
+    })
+  })
+
+  describe('findAdjacentTerminal', () => {
+    it('returns null for a single leaf', () => {
+      expect(findAdjacentTerminal(leaf('a'), 'a', 'left')).toBeNull()
+      expect(findAdjacentTerminal(leaf('a'), 'a', 'right')).toBeNull()
+      expect(findAdjacentTerminal(leaf('a'), 'a', 'up')).toBeNull()
+      expect(findAdjacentTerminal(leaf('a'), 'a', 'down')).toBeNull()
+    })
+
+    it('returns null if currentId not found', () => {
+      expect(findAdjacentTerminal(leaf('a'), 'x', 'left')).toBeNull()
+    })
+
+    it('navigates right in a horizontal split', () => {
+      const tree: SplitNode = {
+        type: 'branch',
+        direction: 'horizontal',
+        first: leaf('a'),
+        second: leaf('b'),
+        ratio: 0.5
+      }
+      expect(findAdjacentTerminal(tree, 'a', 'right')).toBe('b')
+    })
+
+    it('navigates left in a horizontal split', () => {
+      const tree: SplitNode = {
+        type: 'branch',
+        direction: 'horizontal',
+        first: leaf('a'),
+        second: leaf('b'),
+        ratio: 0.5
+      }
+      expect(findAdjacentTerminal(tree, 'b', 'left')).toBe('a')
+    })
+
+    it('returns null at boundary', () => {
+      const tree: SplitNode = {
+        type: 'branch',
+        direction: 'horizontal',
+        first: leaf('a'),
+        second: leaf('b'),
+        ratio: 0.5
+      }
+      expect(findAdjacentTerminal(tree, 'a', 'left')).toBeNull()
+      expect(findAdjacentTerminal(tree, 'b', 'right')).toBeNull()
+    })
+
+    it('returns null for perpendicular direction', () => {
+      const tree: SplitNode = {
+        type: 'branch',
+        direction: 'horizontal',
+        first: leaf('a'),
+        second: leaf('b'),
+        ratio: 0.5
+      }
+      expect(findAdjacentTerminal(tree, 'a', 'up')).toBeNull()
+      expect(findAdjacentTerminal(tree, 'a', 'down')).toBeNull()
+    })
+
+    it('navigates down in a vertical split', () => {
+      const tree: SplitNode = {
+        type: 'branch',
+        direction: 'vertical',
+        first: leaf('a'),
+        second: leaf('b'),
+        ratio: 0.5
+      }
+      expect(findAdjacentTerminal(tree, 'a', 'down')).toBe('b')
+      expect(findAdjacentTerminal(tree, 'b', 'up')).toBe('a')
+    })
+
+    it('navigates in a 2x2 grid (all four directions)', () => {
+      // Layout:  a | b
+      //          -----
+      //          c | d
+      const topRow: SplitNode = {
+        type: 'branch', direction: 'horizontal',
+        first: leaf('a'), second: leaf('b'), ratio: 0.5
+      }
+      const bottomRow: SplitNode = {
+        type: 'branch', direction: 'horizontal',
+        first: leaf('c'), second: leaf('d'), ratio: 0.5
+      }
+      const grid: SplitNode = {
+        type: 'branch', direction: 'vertical',
+        first: topRow, second: bottomRow, ratio: 0.5
+      }
+
+      // From 'a': right->b, down->c
+      expect(findAdjacentTerminal(grid, 'a', 'right')).toBe('b')
+      expect(findAdjacentTerminal(grid, 'a', 'down')).toBe('c')
+      expect(findAdjacentTerminal(grid, 'a', 'left')).toBeNull()
+      expect(findAdjacentTerminal(grid, 'a', 'up')).toBeNull()
+
+      // From 'd': left->c, up->b
+      expect(findAdjacentTerminal(grid, 'd', 'left')).toBe('c')
+      expect(findAdjacentTerminal(grid, 'd', 'up')).toBe('b')
+      expect(findAdjacentTerminal(grid, 'd', 'right')).toBeNull()
+      expect(findAdjacentTerminal(grid, 'd', 'down')).toBeNull()
+
+      // From 'b': left->a, down->c (enters bottom row at first edge)
+      expect(findAdjacentTerminal(grid, 'b', 'left')).toBe('a')
+      expect(findAdjacentTerminal(grid, 'b', 'down')).toBe('c')
+
+      // From 'c': right->d, up->b (enters top row at last edge)
+      expect(findAdjacentTerminal(grid, 'c', 'right')).toBe('d')
+      expect(findAdjacentTerminal(grid, 'c', 'up')).toBe('b')
+    })
+
+    it('drills to nearest edge leaf in deep subtree', () => {
+      // Layout: a | (b / c) — navigate right from 'a' should reach 'b' (top of right side)
+      const tree: SplitNode = {
+        type: 'branch', direction: 'horizontal',
+        first: leaf('a'),
+        second: {
+          type: 'branch', direction: 'vertical',
+          first: leaf('b'), second: leaf('c'), ratio: 0.5
+        },
+        ratio: 0.5
+      }
+      expect(findAdjacentTerminal(tree, 'a', 'right')).toBe('b')
     })
   })
 

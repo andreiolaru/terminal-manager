@@ -5,7 +5,23 @@ export const IPC_CHANNELS = {
   PTY_RESIZE: 'pty:resize',
   PTY_DESTROY: 'pty:destroy',
   PTY_EXIT: 'pty:exit',
+  WINDOW_SET_TITLE: 'window:set-title',
 } as const
+
+export const SHORTCUT_NAMES = [
+  'new-terminal',
+  'close-terminal',
+  'split-right',
+  'split-down',
+  'cycle-group-forward',
+  'cycle-group-backward',
+  'navigate-left',
+  'navigate-right',
+  'navigate-up',
+  'navigate-down',
+] as const
+
+export type ShortcutName = (typeof SHORTCUT_NAMES)[number]
 
 export interface PtyCreateOptions {
   id: string

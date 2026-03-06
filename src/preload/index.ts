@@ -1,6 +1,8 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import { IPC_CHANNELS } from '../shared/ipc-types'
-import type { PtyCreateOptions } from '../shared/ipc-types'
+import { IPC_CHANNELS, SHORTCUT_NAMES } from '../shared/ipc-types'
+import type { PtyCreateOptions, ShortcutName } from '../shared/ipc-types'
+
+const shortcutWhitelist = new Set<string>(SHORTCUT_NAMES)
 
 const electronAPI = {
   createPty(options: PtyCreateOptions): Promise<void> {
@@ -33,6 +35,20 @@ const electronAPI = {
     }
     ipcRenderer.on(IPC_CHANNELS.PTY_EXIT, handler)
     return () => ipcRenderer.removeListener(IPC_CHANNELS.PTY_EXIT, handler)
+  },
+
+  onShortcut(name: string, callback: () => void): () => void {
+    if (!shortcutWhitelist.has(name)) {
+      throw new Error(`Unknown shortcut: ${name}`)
+    }
+    const channel = `shortcut:${name}`
+    const handler = (): void => { callback() }
+    ipcRenderer.on(channel, handler)
+    return () => ipcRenderer.removeListener(channel, handler)
+  },
+
+  setWindowTitle(title: string): void {
+    ipcRenderer.send(IPC_CHANNELS.WINDOW_SET_TITLE, title)
   }
 }
 

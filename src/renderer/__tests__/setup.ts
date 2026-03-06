@@ -13,7 +13,9 @@ const electronAPI = {
   resizePty: vi.fn(),
   destroyPty: vi.fn(() => Promise.resolve()),
   onPtyData: vi.fn(() => vi.fn()),
-  onPtyExit: vi.fn(() => vi.fn())
+  onPtyExit: vi.fn(() => vi.fn()),
+  onShortcut: vi.fn(() => vi.fn()),
+  setWindowTitle: vi.fn()
 }
 
 Object.defineProperty(window, 'electronAPI', {

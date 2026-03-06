@@ -11,7 +11,8 @@ const mockTerminal = {
   onFocus: vi.fn(() => ({ dispose: vi.fn() })),
   focus: vi.fn(),
   dispose: vi.fn(),
-  loadAddon: vi.fn()
+  loadAddon: vi.fn(),
+  attachCustomKeyEventHandler: vi.fn()
 }
 
 vi.mock('@xterm/xterm', () => ({
@@ -25,6 +26,7 @@ vi.mock('@xterm/xterm', () => ({
     focus = mockTerminal.focus
     dispose = mockTerminal.dispose
     loadAddon = mockTerminal.loadAddon
+    attachCustomKeyEventHandler = mockTerminal.attachCustomKeyEventHandler
   }
 }))
 
@@ -75,7 +77,7 @@ describe('TerminalInstance', () => {
   })
 
   it('calls createPty on mount with correct args', () => {
-    render(<TerminalInstance terminalId="t1" isVisible={true} />)
+    render(<TerminalInstance terminalId="t1" isVisible={true} isActive={true} />)
     expect(window.electronAPI.createPty).toHaveBeenCalledWith({
       id: 't1',
       cols: 80,
@@ -84,18 +86,18 @@ describe('TerminalInstance', () => {
   })
 
   it('subscribes to onPtyData on mount', () => {
-    render(<TerminalInstance terminalId="t1" isVisible={true} />)
+    render(<TerminalInstance terminalId="t1" isVisible={true} isActive={true} />)
     expect(window.electronAPI.onPtyData).toHaveBeenCalled()
   })
 
   it('routes PTY data to the correct terminal', () => {
-    render(<TerminalInstance terminalId="t1" isVisible={true} />)
+    render(<TerminalInstance terminalId="t1" isVisible={true} isActive={true} />)
     capturedDataCallback!('t1', 'hello')
     expect(mockTerminal.write).toHaveBeenCalledWith('hello')
   })
 
   it('ignores PTY data for other terminal IDs', () => {
-    render(<TerminalInstance terminalId="t1" isVisible={true} />)
+    render(<TerminalInstance terminalId="t1" isVisible={true} isActive={true} />)
     capturedDataCallback!('other-id', 'nope')
     expect(mockTerminal.write).not.toHaveBeenCalled()
   })
@@ -109,7 +111,7 @@ describe('TerminalInstance', () => {
       }
     )
 
-    render(<TerminalInstance terminalId="t1" isVisible={true} />)
+    render(<TerminalInstance terminalId="t1" isVisible={true} isActive={true} />)
     userInputCb!('typed text')
     expect(window.electronAPI.writePty).toHaveBeenCalledWith(
       't1',
@@ -119,7 +121,7 @@ describe('TerminalInstance', () => {
 
   it('calls destroyPty and disposes subscriptions on unmount', () => {
     const { unmount } = render(
-      <TerminalInstance terminalId="t1" isVisible={true} />
+      <TerminalInstance terminalId="t1" isVisible={true} isActive={true} />
     )
     unmount()
 
@@ -131,7 +133,7 @@ describe('TerminalInstance', () => {
 
   it('hides terminal with display:none when isVisible=false', () => {
     const { container } = render(
-      <TerminalInstance terminalId="t1" isVisible={false} />
+      <TerminalInstance terminalId="t1" isVisible={false} isActive={false} />
     )
     const div = container.firstChild as HTMLElement
     expect(div.style.display).toBe('none')
@@ -139,14 +141,14 @@ describe('TerminalInstance', () => {
 
   it('shows terminal with display:block when isVisible=true', () => {
     const { container } = render(
-      <TerminalInstance terminalId="t1" isVisible={true} />
+      <TerminalInstance terminalId="t1" isVisible={true} isActive={true} />
     )
     const div = container.firstChild as HTMLElement
     expect(div.style.display).toBe('block')
   })
 
   it('writes exit message when PTY exits for this terminal', () => {
-    render(<TerminalInstance terminalId="t1" isVisible={true} />)
+    render(<TerminalInstance terminalId="t1" isVisible={true} isActive={true} />)
     capturedExitCallback!('t1', 42)
     expect(mockTerminal.write).toHaveBeenCalledWith(
       expect.stringContaining('Process exited with code 42')
@@ -154,7 +156,7 @@ describe('TerminalInstance', () => {
   })
 
   it('ignores PTY exit for other terminal IDs', () => {
-    render(<TerminalInstance terminalId="t1" isVisible={true} />)
+    render(<TerminalInstance terminalId="t1" isVisible={true} isActive={true} />)
     capturedExitCallback!('other-id', 1)
     expect(mockTerminal.write).not.toHaveBeenCalled()
   })

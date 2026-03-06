@@ -7,6 +7,8 @@ export interface ElectronAPI {
   destroyPty(id: string): Promise<void>
   onPtyData(callback: (id: string, data: string) => void): () => void
   onPtyExit(callback: (id: string, exitCode: number) => void): () => void
+  onShortcut(name: string, callback: () => void): () => void
+  setWindowTitle(title: string): void
 }
 
 declare global {

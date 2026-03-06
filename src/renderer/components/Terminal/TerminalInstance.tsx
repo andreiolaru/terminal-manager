@@ -11,9 +11,10 @@ import '../../assets/styles/terminal.css'
 interface TerminalInstanceProps {
   terminalId: string
   isVisible: boolean
+  isActive: boolean
 }
 
-export default function TerminalInstance({ terminalId, isVisible }: TerminalInstanceProps) {
+export default function TerminalInstance({ terminalId, isVisible, isActive }: TerminalInstanceProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const terminalRef = useRef<Terminal | null>(null)
   const fitAddonRef = useRef<FitAddon | null>(null)
@@ -37,6 +38,16 @@ export default function TerminalInstance({ terminalId, isVisible }: TerminalInst
 
     const fitAddon = new FitAddon()
     terminal.loadAddon(fitAddon)
+
+    terminal.attachCustomKeyEventHandler((e) => {
+      // Let Electron menu accelerators handle these combos
+      if (e.type !== 'keydown') return true
+      if (e.ctrlKey && e.shiftKey && ['T', 'W', 'D', 'E'].includes(e.key)) return false
+      if (e.ctrlKey && e.key === 'Tab') return false
+      if (e.altKey && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) return false
+      return true
+    })
+
     terminal.open(containerRef.current)
 
     try {
@@ -105,11 +116,17 @@ export default function TerminalInstance({ terminalId, isVisible }: TerminalInst
         fitAddonRef.current?.fit()
         if (terminalRef.current) {
           ipcApi.resizePty(terminalId, terminalRef.current.cols, terminalRef.current.rows)
-          terminalRef.current.focus()
         }
       })
     }
   }, [isVisible, terminalId])
+
+  // Focus xterm when this pane becomes active
+  useEffect(() => {
+    if (isActive && isVisible && terminalRef.current) {
+      terminalRef.current.focus()
+    }
+  }, [isActive, isVisible])
 
   return (
     <div

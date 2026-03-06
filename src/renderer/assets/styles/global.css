@@ -12,3 +12,43 @@ html, body, #root {
   color: #cccccc;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
+
+::selection {
+  background: #264f78;
+  color: #ffffff;
+}
+
+:root {
+  --focus-border: #007acc;
+  --sash-size: 6px;
+  --sash-hover-size: 3px;
+}
+
+/* Thin, unobtrusive scrollbars — visible only on hover */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 2px;
+}
+
+*:hover > ::-webkit-scrollbar-thumb,
+::-webkit-scrollbar-thumb:hover,
+*:hover::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}

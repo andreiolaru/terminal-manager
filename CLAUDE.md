@@ -53,6 +53,8 @@ Personal-use Windows terminal manager (VS Code-style integrated terminal). Elect
 
 ```
 src/
+  shared/         — Types shared across main/preload/renderer
+    ipc-types.ts  — IPC channel names + payload types
   main/           — Electron main process
     index.ts      — App entry, window creation
     pty-manager.ts — node-pty spawn/write/resize/kill
@@ -63,8 +65,8 @@ src/
   renderer/       — React app
     components/   — Sidebar/, Terminal/, SplitPane/, Layout/
     store/        — Zustand store + types
-    hooks/        — useTerminal, usePtyIpc
-    lib/          — ipc-api, tree-utils, constants
+    hooks/        — useTerminal
+    lib/          — ipc-api, pty-dispatcher, tree-utils, constants
     assets/styles/ — CSS files
 ```
 
@@ -76,7 +78,7 @@ Current progress is tracked here. Update as phases complete:
 - [x] **Phase 2**: Multiple terminals + sidebar
 - [x] **Phase 3**: Split panes (allotment + recursive tree)
 - [x] **Phase 4**: Terminal groups / tabs
-- [ ] **Phase 5**: Polish + keyboard shortcuts
+- [x] **Phase 5**: Polish + keyboard shortcuts
 - [ ] **Phase 6**: Extensibility hooks (config, theming scaffold)
 
 ## Build & Run
@@ -101,25 +103,20 @@ After each phase:
 - `@electron/rebuild` must run in postinstall
 - electron-builder config needs `asarUnpack: ["node_modules/node-pty/**"]`
 
-## Subagents Available
+## Domain Expertise Skills
 
-Use these via the Agent tool for specialized tasks:
+Invoke these slash commands to activate project-specific domain expertise in the current conversation:
 
-| Agent | When to use |
-|-------|------------|
-| `electron-pro` | Main process architecture, IPC design, security, native module issues |
-| `react-specialist` | Component patterns, hooks, performance, state management |
-| `typescript-pro` | Complex types, generics, type-level programming |
-| `ui-designer` | Visual design, CSS, component styling, dark mode |
-| `javascript-pro` | Async patterns, performance optimization, Node.js specifics |
-| `powershell-7-expert` | Shell/terminal behavior questions (less likely needed) |
+| Command | When to use |
+|---------|------------|
+| `/electron-pro` | Main process, IPC design, security, native modules |
+| `/react-specialist` | Component architecture, hooks, performance, Zustand |
+| `/typescript-pro` | Type safety, generics, cross-process type contracts |
+| `/ui-designer` | VS Code-style dark theme, CSS, accessibility |
+| `/javascript-pro` | Async patterns, IPC throughput, memory management |
+| `/powershell-7-expert` | Shell/PTY behavior, escape sequences, terminal emulation |
 
-### Delegation Guidelines
-- Use `electron-pro` for anything touching main process or preload
-- Use `react-specialist` for component architecture decisions
-- Use `ui-designer` when building CSS/styling for sidebar, tabs, terminal chrome
-- Combine `typescript-pro` + `react-specialist` for complex typed React patterns
-- Keep subagent tasks focused — one clear question or implementation task per call
+These inject focused, project-specific knowledge (not generic checklists). Use them before starting work in an unfamiliar area of the codebase.
 
 ## Common Pitfalls to Avoid
 

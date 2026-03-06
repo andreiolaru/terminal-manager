@@ -87,7 +87,7 @@ export default function TerminalTabs() {
       <button
         className="terminal-tab-add"
         onClick={addGroup}
-        title="New Group"
+        title="New Group (Ctrl+Tab to cycle)"
         aria-label="New Group"
       >
         +

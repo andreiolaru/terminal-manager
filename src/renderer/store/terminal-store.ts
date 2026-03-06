@@ -1,10 +1,10 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import { v4 as uuid } from 'uuid'
-import type { TerminalState, TerminalGroup } from './types'
+import type { TerminalState, TerminalGroup, NavigationDirection } from './types'
 import { DEFAULT_SHELL } from '../lib/constants'
 import { destroyPtySafe } from '../lib/ipc-api'
-import { splitNode as splitTreeNode, removeNode, collectLeafIds, containsLeaf } from '../lib/tree-utils'
+import { splitNode as splitTreeNode, removeNode, collectLeafIds, containsLeaf, findAdjacentTerminal } from '../lib/tree-utils'
 
 function findGroupForTerminal(groups: TerminalGroup[], terminalId: string): TerminalGroup | undefined {
   return groups.find((g) => containsLeaf(g.splitTree, terminalId))
@@ -231,6 +231,27 @@ export const useTerminalStore = create<TerminalState>()(
           state.terminals[id].isAlive = false
         }
       })
+    },
+
+    cycleGroup: (delta): void => {
+      set((state) => {
+        if (state.groups.length <= 1) return
+        const currentIndex = state.groups.findIndex((g) => g.id === state.activeGroupId)
+        if (currentIndex === -1) return
+        const nextIndex = (currentIndex + delta + state.groups.length) % state.groups.length
+        state.activeGroupId = state.groups[nextIndex].id
+      })
+    },
+
+    navigatePane: (direction: NavigationDirection): void => {
+      const currentState = useTerminalStore.getState()
+      const group = currentState.groups.find((g) => g.id === currentState.activeGroupId)
+      if (!group) return
+
+      const targetId = findAdjacentTerminal(group.splitTree, group.activeTerminalId, direction)
+      if (targetId) {
+        useTerminalStore.getState().setActiveTerminal(targetId)
+      }
     }
   }))
 )

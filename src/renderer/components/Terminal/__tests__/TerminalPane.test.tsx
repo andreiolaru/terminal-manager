@@ -83,21 +83,21 @@ describe('TerminalPane', () => {
   it('Split Right calls splitTerminal with horizontal', async () => {
     const user = userEvent.setup()
     render(<TerminalPane terminalId="t1" groupId="g1" />)
-    await user.click(screen.getByTitle('Split Right'))
+    await user.click(screen.getByLabelText('Split Right'))
     expect(mockSplit).toHaveBeenCalledWith('t1', 'horizontal')
   })
 
   it('Split Down calls splitTerminal with vertical', async () => {
     const user = userEvent.setup()
     render(<TerminalPane terminalId="t1" groupId="g1" />)
-    await user.click(screen.getByTitle('Split Down'))
+    await user.click(screen.getByLabelText('Split Down'))
     expect(mockSplit).toHaveBeenCalledWith('t1', 'vertical')
   })
 
   it('Close button calls removeTerminal', async () => {
     const user = userEvent.setup()
     render(<TerminalPane terminalId="t1" groupId="g1" />)
-    await user.click(screen.getByTitle('Close'))
+    await user.click(screen.getByLabelText('Close terminal'))
     expect(mockRemove).toHaveBeenCalledWith('t1')
   })
 

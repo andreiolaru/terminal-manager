@@ -79,7 +79,8 @@
   flex-shrink: 0;
 }
 
-.terminal-tab:hover .terminal-tab-close {
+.terminal-tab:hover .terminal-tab-close,
+.terminal-tab.active .terminal-tab-close {
   opacity: 1;
 }
 

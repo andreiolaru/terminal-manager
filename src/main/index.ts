@@ -1,7 +1,21 @@
-import { app, BrowserWindow, session } from 'electron'
+import { app, BrowserWindow, Menu, session } from 'electron'
 import { join } from 'path'
 import { PtyManager } from './pty-manager'
 import { registerIpcHandlers } from './ipc-handlers'
+import { SHORTCUT_NAMES } from '../shared/ipc-types'
+
+const SHORTCUT_ACCELERATORS: Record<string, string> = {
+  'new-terminal': 'CmdOrCtrl+Shift+T',
+  'close-terminal': 'CmdOrCtrl+Shift+W',
+  'split-right': 'CmdOrCtrl+Shift+D',
+  'split-down': 'CmdOrCtrl+Shift+E',
+  'cycle-group-forward': 'Ctrl+Tab',
+  'cycle-group-backward': 'Ctrl+Shift+Tab',
+  'navigate-left': 'Alt+Left',
+  'navigate-right': 'Alt+Right',
+  'navigate-up': 'Alt+Up',
+  'navigate-down': 'Alt+Down',
+}
 
 const ptyManager = new PtyManager()
 const isDev = !!process.env.ELECTRON_RENDERER_URL
@@ -10,6 +24,7 @@ function createWindow(): void {
   const mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
+    autoHideMenuBar: true,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
@@ -46,6 +61,16 @@ function createWindow(): void {
   })
 
   ptyManager.setWindow(mainWindow)
+
+  const menuItems: Electron.MenuItemConstructorOptions[] = SHORTCUT_NAMES.map((name) => ({
+    label: name,
+    accelerator: SHORTCUT_ACCELERATORS[name],
+    visible: false,
+    click: (): void => {
+      mainWindow.webContents.send(`shortcut:${name}`)
+    }
+  }))
+  Menu.setApplicationMenu(Menu.buildFromTemplate([{ label: 'Shortcuts', submenu: menuItems }]))
 
   if (process.env.ELECTRON_RENDERER_URL) {
     mainWindow.loadURL(process.env.ELECTRON_RENDERER_URL)

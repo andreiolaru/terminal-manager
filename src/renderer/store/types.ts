@@ -10,6 +10,7 @@ export interface TerminalInfo {
 }
 
 export type SplitDirection = 'horizontal' | 'vertical'
+export type NavigationDirection = 'left' | 'right' | 'up' | 'down'
 
 export interface SplitLeaf {
   type: 'leaf'
@@ -51,4 +52,7 @@ export interface TerminalState {
   setActiveTerminal: (id: TerminalId) => void
   renameTerminal: (id: TerminalId, title: string) => void
   setTerminalDead: (id: TerminalId) => void
+
+  cycleGroup: (delta: 1 | -1) => void
+  navigatePane: (direction: NavigationDirection) => void
 }

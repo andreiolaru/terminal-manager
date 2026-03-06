@@ -19,6 +19,7 @@
   background: #2d2d2d;
   border-bottom: 1px solid #3c3c3c;
   border-left: 2px solid transparent;
+  transition: border-color 0.15s ease;
   user-select: none;
   gap: 4px;
 }
@@ -77,6 +78,11 @@
 .terminal-title-actions button.close-btn:hover {
   background: #b13a3a;
   color: #ffffff;
+}
+
+.terminal-pane.dead .terminal-title-bar .title {
+  opacity: 0.5;
+  font-style: italic;
 }
 
 .terminal-content {

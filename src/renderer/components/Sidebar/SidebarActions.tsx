@@ -6,10 +6,10 @@ export default function SidebarActions() {
 
   return (
     <div className="sidebar-actions">
-      <button className="sidebar-btn" onClick={addTerminal} title="New Terminal">
+      <button className="sidebar-btn" onClick={addTerminal} title="New Terminal (Ctrl+Shift+T)">
         +
       </button>
-      <button className="sidebar-btn" onClick={addGroup} title="New Group">
+      <button className="sidebar-btn" onClick={addGroup} title="New Group (Ctrl+Tab to cycle)">
         &#8862;
       </button>
     </div>

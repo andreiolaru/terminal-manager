@@ -12,7 +12,7 @@ export default function TerminalPanel() {
       <div className="terminal-panel-content">
         {groups.length === 0 ? (
           <div className="terminal-panel-empty">
-            No terminals open. Click &ldquo;+&rdquo; to create a group.
+            Press <kbd>Ctrl+Shift+T</kbd> or click &ldquo;+&rdquo; to create a terminal.
           </div>
         ) : (
           groups.map((group) => (
