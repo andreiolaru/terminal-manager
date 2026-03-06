@@ -16,6 +16,8 @@ export default function TerminalInstance({ terminalId, isVisible }: TerminalInst
   const containerRef = useRef<HTMLDivElement>(null)
   const terminalRef = useRef<Terminal | null>(null)
   const fitAddonRef = useRef<FitAddon | null>(null)
+  const visibleRef = useRef(isVisible)
+  visibleRef.current = isVisible
 
   useEffect(() => {
     if (!containerRef.current) return
@@ -72,13 +74,14 @@ export default function TerminalInstance({ terminalId, isVisible }: TerminalInst
       ipcApi.writePty(terminalId, data)
     })
 
-    // C10: Debounce resize events
+    // C10: Debounce resize events; skip when hidden (display:none → 0×0 kills PTY)
     let resizeTimer: ReturnType<typeof setTimeout> | null = null
     const resizeObserver = new ResizeObserver(() => {
+      if (!visibleRef.current) return
       if (resizeTimer) clearTimeout(resizeTimer)
       resizeTimer = setTimeout(() => {
         requestAnimationFrame(() => {
-          if (fitAddonRef.current) {
+          if (fitAddonRef.current && visibleRef.current) {
             fitAddonRef.current.fit()
             if (terminalRef.current) {
               ipcApi.resizePty(terminalId, terminalRef.current.cols, terminalRef.current.rows)
