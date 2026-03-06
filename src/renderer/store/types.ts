@@ -13,6 +13,7 @@ export interface TerminalInfo {
   claudeCode?: boolean
   claudeStatus?: ClaudeCodeStatus
   claudeStatusTitle?: string
+  fontSize?: number
 }
 
 export type SplitDirection = 'horizontal' | 'vertical'
@@ -45,6 +46,7 @@ export interface TerminalGroup {
     to: string
     angle?: number
   }
+  fontSize?: number
 }
 
 export interface TerminalState {
@@ -54,6 +56,7 @@ export interface TerminalState {
   nextTerminalNumber: number
   nextGroupNumber: number
   sidebarCollapsed: boolean
+  globalFontSize: number
 
   addGroup: () => string
   removeGroup: (groupId: string) => void
@@ -74,4 +77,8 @@ export interface TerminalState {
   clearStartupCommand: (id: TerminalId) => void
   setClaudeStatus: (id: TerminalId, status: ClaudeCodeStatus, contextTitle?: string) => void
   toggleSidebar: () => void
+
+  setGlobalFontSize: (size: number) => void
+  setGroupFontSize: (groupId: string, size: number | undefined) => void
+  setTerminalFontSize: (id: TerminalId, size: number | undefined) => void
 }

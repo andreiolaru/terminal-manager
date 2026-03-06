@@ -5,6 +5,7 @@ import { render } from '@testing-library/react'
 const mockTerminal = {
   cols: 80,
   rows: 24,
+  options: { fontSize: 14 } as Record<string, unknown>,
   open: vi.fn(),
   write: vi.fn(),
   onData: vi.fn((_cb: (data: string) => void) => ({ dispose: vi.fn() })),
@@ -20,6 +21,7 @@ vi.mock('@xterm/xterm', () => ({
   Terminal: class MockTerminal {
     cols = mockTerminal.cols
     rows = mockTerminal.rows
+    options = mockTerminal.options
     open = mockTerminal.open
     write = mockTerminal.write
     onData = mockTerminal.onData

@@ -55,3 +55,37 @@
   color: var(--tm-text-muted);
   font-size: 11px;
 }
+
+.status-bar-spacer {
+  flex: 1;
+}
+
+.status-bar-font-size {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--tm-text-secondary);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.status-bar-font-size button {
+  background: none;
+  border: none;
+  color: var(--tm-text-secondary);
+  font-size: 12px;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 2px;
+  line-height: 1;
+  padding: 0;
+}
+
+.status-bar-font-size button:hover {
+  background: var(--tm-hover-bg);
+  color: var(--tm-text-primary);
+}

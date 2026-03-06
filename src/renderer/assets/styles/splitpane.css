@@ -15,6 +15,7 @@
 }
 
 .terminal-title-bar {
+  position: relative;
   height: 24px;
   min-height: 24px;
   display: flex;
@@ -69,7 +70,8 @@
 }
 
 .terminal-title-actions button:hover,
-.terminal-title-actions button:focus-visible {
+.terminal-title-actions button:focus-visible,
+.terminal-title-actions button.active {
   background: var(--tm-hover-bg);
   color: var(--tm-text-primary);
   outline: none;

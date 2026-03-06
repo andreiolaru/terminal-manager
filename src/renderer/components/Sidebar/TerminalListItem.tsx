@@ -11,6 +11,19 @@ const statusIcons: Record<string, string> = {
   completed: '\u2713',
 }
 
+const statusLabels: Record<string, string> = {
+  idle: 'Idle',
+  working: 'Working...',
+  'needs-input': 'Needs input',
+  completed: 'Completed',
+}
+
+function splitTitle(title: string): { name: string; command: string } {
+  const idx = title.indexOf(' - ')
+  if (idx === -1) return { name: title, command: '' }
+  return { name: title.slice(0, idx), command: title.slice(idx + 3) }
+}
+
 interface TerminalListItemProps {
   terminal: TerminalInfo
   isActive: boolean
@@ -58,10 +71,15 @@ export default function TerminalListItem({ terminal, isActive }: TerminalListIte
     if (await confirmTerminalClose(terminal.id)) removeTerminal(terminal.id)
   }
 
+  const statusClass = terminal.claudeStatus && terminal.claudeStatus !== 'not-tracked'
+    ? `claude-${terminal.claudeStatus}`
+    : ''
+
   const className = [
     'terminal-list-item',
     isActive ? 'active' : '',
-    !terminal.isAlive ? 'dead' : ''
+    !terminal.isAlive ? 'dead' : '',
+    statusClass
   ]
     .filter(Boolean)
     .join(' ')
@@ -77,6 +95,16 @@ export default function TerminalListItem({ terminal, isActive }: TerminalListIte
     }
   }
 
+  const { name, command } = splitTitle(terminal.title)
+  const claudeStatus = terminal.claudeStatus && terminal.claudeStatus !== 'not-tracked'
+    ? terminal.claudeStatus
+    : null
+  const statusText = claudeStatus
+    ? (terminal.claudeStatusTitle
+      ? `${statusLabels[claudeStatus]} — ${terminal.claudeStatusTitle}`
+      : statusLabels[claudeStatus])
+    : null
+
   return (
     <div
       className={className}
@@ -87,28 +115,38 @@ export default function TerminalListItem({ terminal, isActive }: TerminalListIte
       tabIndex={0}
       aria-selected={isActive}
     >
-      {terminal.claudeStatus && terminal.claudeStatus !== 'not-tracked' && (
-        <span className={`claude-status-icon ${terminal.claudeStatus}`}>
-          {statusIcons[terminal.claudeStatus]}
-        </span>
+      <div className="terminal-list-item-header">
+        {claudeStatus && (
+          <span className={`claude-status-icon ${claudeStatus}`}>
+            {statusIcons[claudeStatus]}
+          </span>
+        )}
+        {isEditing ? (
+          <input
+            ref={inputRef}
+            className="terminal-rename-input"
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            onBlur={commitRename}
+            onKeyDown={handleKeyDown}
+          />
+        ) : (
+          <span className="terminal-list-item-name">{name}</span>
+        )}
+        <button className="terminal-close-btn" onClick={handleClose} title="Close terminal" aria-label={`Close ${terminal.title}`}>
+          ×
+        </button>
+      </div>
+      {command && (
+        <div className="terminal-list-item-command" title={command}>
+          {command.length > 400 ? command.slice(0, 400) + '\u2026' : command}
+        </div>
       )}
-      {isEditing ? (
-        <input
-          ref={inputRef}
-          className="terminal-rename-input"
-          value={editValue}
-          onChange={(e) => setEditValue(e.target.value)}
-          onBlur={commitRename}
-          onKeyDown={handleKeyDown}
-        />
-      ) : (
-        <span className="terminal-list-item-title" title={terminal.title}>
-          {terminal.title.length > 25 ? terminal.title.slice(0, 25) + '\u2026' : terminal.title}
-        </span>
+      {statusText && (
+        <div className={`terminal-list-item-status ${claudeStatus}`}>
+          {statusText}
+        </div>
       )}
-      <button className="terminal-close-btn" onClick={handleClose} title="Close terminal" aria-label={`Close ${terminal.title}`}>
-        ×
-      </button>
     </div>
   )
 }

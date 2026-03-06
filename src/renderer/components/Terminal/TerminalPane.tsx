@@ -1,7 +1,8 @@
-import { memo, useCallback } from 'react'
+import { memo, useCallback, useState } from 'react'
 import { useTerminalStore } from '../../store/terminal-store'
 import { confirmTerminalClose } from '../../lib/claude-close-guard'
 import TerminalInstance from './TerminalInstance'
+import FontSizeMenu from './FontSizeMenu'
 import '../../assets/styles/splitpane.css'
 import '../../assets/styles/claude-status.css'
 
@@ -28,6 +29,7 @@ export default memo(function TerminalPane({ terminalId, groupId }: TerminalPaneP
   const splitTerminal = useTerminalStore((s) => s.splitTerminal)
   const removeTerminal = useTerminalStore((s) => s.removeTerminal)
   const setActiveTerminal = useTerminalStore((s) => s.setActiveTerminal)
+  const [fontMenuOpen, setFontMenuOpen] = useState(false)
 
   const handleSplitH = useCallback(() => splitTerminal(terminalId, 'horizontal'), [splitTerminal, terminalId])
   const handleSplitV = useCallback(() => splitTerminal(terminalId, 'vertical'), [splitTerminal, terminalId])
@@ -50,9 +52,17 @@ export default memo(function TerminalPane({ terminalId, groupId }: TerminalPaneP
           </span>
         )}
         <span className="title" title={title}>
-          {title.length > 30 ? title.slice(0, 30) + '\u2026' : title}
+          {title.length > 400 ? title.slice(0, 400) + '\u2026' : title}
         </span>
         <div className="terminal-title-actions">
+          <button
+            onClick={(e) => { e.stopPropagation(); setFontMenuOpen(!fontMenuOpen) }}
+            title="Font size"
+            aria-label="Font size"
+            className={fontMenuOpen ? 'active' : ''}
+          >
+            A
+          </button>
           <button onClick={handleSplitH} title="Split Right (Ctrl+Shift+D)" aria-label="Split Right">
             ⫼
           </button>
@@ -68,6 +78,13 @@ export default memo(function TerminalPane({ terminalId, groupId }: TerminalPaneP
             ×
           </button>
         </div>
+        {fontMenuOpen && (
+          <FontSizeMenu
+            terminalId={terminalId}
+            groupId={groupId}
+            onClose={() => setFontMenuOpen(false)}
+          />
+        )}
       </div>
       <div className="terminal-content">
         <TerminalInstance terminalId={terminalId} isVisible={isGroupActive} isActive={isActive} />

@@ -24,12 +24,27 @@ const persistedTerminals = new Map<string, {
   fitAddon: FitAddon
 }>()
 
+function useResolvedFontSize(terminalId: string): number {
+  return useTerminalStore((s) => {
+    const term = s.terminals[terminalId]
+    if (term?.fontSize) return term.fontSize
+    const group = s.groups.find((g) =>
+      g.splitTree.type === 'leaf'
+        ? g.splitTree.terminalId === terminalId
+        : JSON.stringify(g.splitTree).includes(terminalId)
+    )
+    if (group?.fontSize) return group.fontSize
+    return s.globalFontSize
+  })
+}
+
 export default function TerminalInstance({ terminalId, isVisible, isActive }: TerminalInstanceProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const terminalRef = useRef<Terminal | null>(null)
   const fitAddonRef = useRef<FitAddon | null>(null)
   const visibleRef = useRef(isVisible)
   visibleRef.current = isVisible
+  const resolvedFontSize = useResolvedFontSize(terminalId)
 
   useEffect(() => {
     if (!containerRef.current) return
@@ -136,6 +151,9 @@ export default function TerminalInstance({ terminalId, isVisible, isActive }: Te
       terminal.onData((data) => {
         ipcApi.writePty(terminalId, data)
 
+        // Skip title tracking once Claude Code is active
+        if (useTerminalStore.getState().terminals[terminalId]?.claudeCode) return
+
         // Strip escape sequences (CSI, SS3, simple ESC) before tracking input
         const cleaned = data.replace(/\x1b\[[0-9;?]*[A-Za-z]/g, '')
           .replace(/\x1bO[A-Za-z]/g, '')
@@ -207,6 +225,21 @@ export default function TerminalInstance({ terminalId, isVisible, isActive }: Te
       })
     }
   }, [isVisible, terminalId])
+
+  // Apply font size changes
+  useEffect(() => {
+    if (terminalRef.current && terminalRef.current.options.fontSize !== resolvedFontSize) {
+      terminalRef.current.options.fontSize = resolvedFontSize
+      if (fitAddonRef.current && visibleRef.current) {
+        requestAnimationFrame(() => {
+          fitAddonRef.current?.fit()
+          if (terminalRef.current) {
+            ipcApi.resizePty(terminalId, terminalRef.current.cols, terminalRef.current.rows)
+          }
+        })
+      }
+    }
+  }, [resolvedFontSize, terminalId])
 
   // Focus xterm when this pane becomes active
   useEffect(() => {

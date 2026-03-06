@@ -18,15 +18,65 @@
   50% { opacity: 0.4; }
 }
 
-/* Title bar tinting by status */
-.terminal-pane.claude-needs-input .terminal-title-bar {
+/* Title bar tinting by status — use 3-class selectors to beat .terminal-pane.active .terminal-title-bar */
+.terminal-pane.claude-idle .terminal-title-bar,
+.terminal-pane.active.claude-idle .terminal-title-bar {
+  background: linear-gradient(90deg, rgba(110, 118, 129, 0.10), transparent 60%),
+              linear-gradient(var(--tm-group-color-bg, transparent), var(--tm-group-color-bg, transparent)),
+              var(--tm-titlebar-bg);
+}
+
+.terminal-pane.claude-working .terminal-title-bar,
+.terminal-pane.active.claude-working .terminal-title-bar {
+  background: linear-gradient(90deg, rgba(88, 166, 255, 0.15), transparent 60%),
+              linear-gradient(var(--tm-group-color-bg, transparent), var(--tm-group-color-bg, transparent)),
+              var(--tm-titlebar-bg);
+}
+
+.terminal-pane.claude-needs-input .terminal-title-bar,
+.terminal-pane.active.claude-needs-input .terminal-title-bar {
   background: linear-gradient(90deg, rgba(210, 153, 34, 0.15), transparent 60%),
               linear-gradient(var(--tm-group-color-bg, transparent), var(--tm-group-color-bg, transparent)),
               var(--tm-titlebar-bg);
 }
 
-.terminal-pane.claude-completed .terminal-title-bar {
+.terminal-pane.claude-completed .terminal-title-bar,
+.terminal-pane.active.claude-completed .terminal-title-bar {
   background: linear-gradient(90deg, rgba(63, 185, 80, 0.10), transparent 60%),
               linear-gradient(var(--tm-group-color-bg, transparent), var(--tm-group-color-bg, transparent)),
               var(--tm-titlebar-bg);
+}
+
+/* Sidebar item tinting by status */
+.terminal-list-item.claude-idle {
+  background: rgba(110, 118, 129, 0.06);
+}
+
+.terminal-list-item.claude-working {
+  background: rgba(88, 166, 255, 0.08);
+}
+
+.terminal-list-item.claude-needs-input {
+  background: rgba(210, 153, 34, 0.10);
+}
+
+.terminal-list-item.claude-completed {
+  background: rgba(63, 185, 80, 0.08);
+}
+
+/* Keep hover/active overrides above status tint */
+.terminal-list-item.active.claude-idle {
+  background: linear-gradient(rgba(110, 118, 129, 0.10), rgba(110, 118, 129, 0.10)), var(--tm-list-active-bg);
+}
+
+.terminal-list-item.active.claude-working {
+  background: linear-gradient(rgba(88, 166, 255, 0.12), rgba(88, 166, 255, 0.12)), var(--tm-list-active-bg);
+}
+
+.terminal-list-item.active.claude-needs-input {
+  background: linear-gradient(rgba(210, 153, 34, 0.14), rgba(210, 153, 34, 0.14)), var(--tm-list-active-bg);
+}
+
+.terminal-list-item.active.claude-completed {
+  background: linear-gradient(rgba(63, 185, 80, 0.12), rgba(63, 185, 80, 0.12)), var(--tm-list-active-bg);
 }

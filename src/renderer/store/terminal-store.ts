@@ -4,7 +4,7 @@ import { immer } from 'zustand/middleware/immer'
 import { v4 as uuid } from 'uuid'
 import type { TerminalState, TerminalGroup, NavigationDirection } from './types'
 import type { LayoutTemplate } from '../../shared/template-types'
-import { DEFAULT_SHELL } from '../lib/constants'
+import { DEFAULT_SHELL, DEFAULT_FONT_SIZE } from '../lib/constants'
 import { destroyPtySafe } from '../lib/ipc-api'
 import { splitNode as splitTreeNode, removeNode, collectLeafIds, containsLeaf, findAdjacentTerminal } from '../lib/tree-utils'
 import { instantiateLayoutNode } from '../lib/template-utils'
@@ -29,6 +29,7 @@ export const useTerminalStore = create<TerminalState>()(
     nextTerminalNumber: 1,
     nextGroupNumber: 1,
     sidebarCollapsed: false,
+    globalFontSize: DEFAULT_FONT_SIZE,
 
     addGroup: (): string => {
       const groupId = uuid()
@@ -322,6 +323,29 @@ export const useTerminalStore = create<TerminalState>()(
     toggleSidebar: (): void => {
       set((state) => {
         state.sidebarCollapsed = !state.sidebarCollapsed
+      })
+    },
+
+    setGlobalFontSize: (size): void => {
+      set((state) => {
+        state.globalFontSize = Math.min(32, Math.max(8, size))
+      })
+    },
+
+    setGroupFontSize: (groupId, size): void => {
+      set((state) => {
+        const group = state.groups.find((g) => g.id === groupId)
+        if (group) {
+          group.fontSize = size !== undefined ? Math.min(32, Math.max(8, size)) : undefined
+        }
+      })
+    },
+
+    setTerminalFontSize: (id, size): void => {
+      set((state) => {
+        if (state.terminals[id]) {
+          state.terminals[id].fontSize = size !== undefined ? Math.min(32, Math.max(8, size)) : undefined
+        }
       })
     }
   })),

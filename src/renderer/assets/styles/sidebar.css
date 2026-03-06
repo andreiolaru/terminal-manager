@@ -1,12 +1,28 @@
 .sidebar {
-  width: 220px;
-  min-width: 220px;
+  position: relative;
   height: 100%;
   background: var(--tm-sidebar-bg);
   border-right: 1px solid var(--tm-border);
   display: flex;
   flex-direction: column;
   user-select: none;
+  flex-shrink: 0;
+}
+
+.sidebar-resize-handle {
+  position: absolute;
+  top: 0;
+  right: -3px;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 10;
+}
+
+.sidebar-resize-handle:hover,
+.sidebar-resize-handle:active {
+  background: var(--tm-accent);
+  opacity: 0.5;
 }
 
 .sidebar.collapsed {
@@ -84,10 +100,11 @@
 
 .terminal-list-item {
   display: flex;
-  align-items: center;
-  padding: 4px 12px;
+  flex-direction: column;
+  padding: 6px 12px;
   cursor: pointer;
-  gap: 4px;
+  gap: 2px;
+  border-bottom: 1px solid var(--tm-border);
 }
 
 .terminal-list-item:hover {
@@ -103,18 +120,54 @@
   background: var(--tm-list-active-bg);
 }
 
-.terminal-list-item.dead .terminal-list-item-title {
-  opacity: 0.5;
-  text-decoration: line-through;
+.terminal-list-item-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
-.terminal-list-item-title {
+.terminal-list-item-name {
   flex: 1;
-  font-size: 13px;
+  font-size: 12px;
+  font-weight: 600;
   color: var(--tm-text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.terminal-list-item.dead .terminal-list-item-name {
+  opacity: 0.5;
+  text-decoration: line-through;
+}
+
+.terminal-list-item-command {
+  font-size: 11px;
+  color: var(--tm-text-secondary);
+  line-height: 1.4;
+  word-break: break-word;
+  max-height: 4.2em;
+  overflow: hidden;
+  padding-left: 2px;
+}
+
+.terminal-list-item-status {
+  font-size: 10px;
+  color: var(--tm-text-muted);
+  padding-left: 2px;
+  margin-top: 1px;
+}
+
+.terminal-list-item-status.working {
+  color: var(--tm-accent, #007acc);
+}
+
+.terminal-list-item-status.needs-input {
+  color: #e8a838;
+}
+
+.terminal-list-item-status.completed {
+  color: #4ec94e;
 }
 
 .terminal-rename-input {
@@ -146,7 +199,8 @@
 }
 
 .terminal-list-item:hover .terminal-close-btn,
-.terminal-list-item:focus-within .terminal-close-btn {
+.terminal-list-item:focus-within .terminal-close-btn,
+.terminal-list-item-header:hover .terminal-close-btn {
   opacity: 1;
 }
 

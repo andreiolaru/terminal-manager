@@ -57,6 +57,19 @@ function StatusBarItem({ id }: { id: string }) {
   )
 }
 
+function GlobalFontSize() {
+  const globalFontSize = useTerminalStore((s) => s.globalFontSize)
+  const setGlobalFontSize = useTerminalStore((s) => s.setGlobalFontSize)
+
+  return (
+    <div className="status-bar-font-size">
+      <button onClick={() => setGlobalFontSize(globalFontSize - 1)} title="Decrease font size">-</button>
+      <span title="Global font size">{globalFontSize}px</span>
+      <button onClick={() => setGlobalFontSize(globalFontSize + 1)} title="Increase font size">+</button>
+    </div>
+  )
+}
+
 export default function StatusBar() {
   const trackedIds = useTrackedIds()
 
@@ -65,6 +78,8 @@ export default function StatusBar() {
       {trackedIds.map((id) => (
         <StatusBarItem key={id} id={id} />
       ))}
+      <div className="status-bar-spacer" />
+      <GlobalFontSize />
     </div>
   )
 }
