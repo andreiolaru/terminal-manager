@@ -161,13 +161,12 @@ export class ClaudeCodeDetector {
     const osc = extractOscSignals(rawData)
 
     if (osc.title !== undefined) {
-      const wasWorking = titleIndicatesWorking(state.lastTitle)
       state.lastTitle = osc.title
 
       if (titleIndicatesWorking(osc.title)) {
         this.transition(id, state, 'working')
-      } else if (wasWorking && state.status === 'working') {
-        // Title dropped the working indicator — Claude finished, waiting for next input
+      } else if (state.status === 'working') {
+        // Non-working title while in working state — Claude finished or just started
         this.transition(id, state, 'idle')
       }
     }
@@ -234,9 +233,13 @@ export class ClaudeCodeDetector {
     if (state.silenceTimer) clearTimeout(state.silenceTimer)
     state.silenceTimer = setTimeout(() => {
       state.silenceTimer = null
+      if (state.status === 'needs-input' || state.status === 'completed') return
       const elapsed = Date.now() - state.lastDataTime
-      if (elapsed >= NEEDS_INPUT_SILENCE_MS - 50 && state.status !== 'needs-input' && state.status !== 'completed') {
+      if (elapsed >= NEEDS_INPUT_SILENCE_MS - 50) {
         this.transition(id, state, 'needs-input')
+      } else {
+        // Output arrived during wait — retry
+        this.scheduleSilenceCheck(id, state)
       }
     }, NEEDS_INPUT_SILENCE_MS)
   }
