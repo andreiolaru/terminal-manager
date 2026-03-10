@@ -17,8 +17,8 @@
 .terminal-title-bar {
   position: relative;
   display: flex;
-  align-items: flex-start;
-  padding: 4px 8px;
+  align-items: center;
+  padding: 2px 8px;
   background: linear-gradient(var(--tm-group-color-bg, transparent), var(--tm-group-color-bg, transparent)), var(--tm-titlebar-bg);
   border-bottom: 1px solid var(--tm-border);
   border-left: 2px solid transparent;
@@ -27,23 +27,18 @@
   gap: 4px;
 }
 
-/* Multi-line content: name, command, status */
+/* Content: name — command (wraps if long) */
 .terminal-title-content {
   flex: 1;
   min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
+  line-height: 18px;
+  font-size: 11px;
+  word-break: break-word;
 }
 
 .terminal-title-name {
-  font-size: 11px;
   font-weight: 600;
   color: var(--tm-text-secondary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  line-height: 20px;
 }
 
 .terminal-pane.active .terminal-title-name {
@@ -56,37 +51,15 @@
 }
 
 .terminal-title-command {
-  font-size: 10px;
-  color: var(--tm-text-secondary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.terminal-title-status {
-  font-size: 10px;
   color: var(--tm-text-muted);
 }
 
-.terminal-title-status.working {
-  color: var(--tm-accent);
-}
-
-.terminal-title-status.needs-input {
-  color: #d29922;
-}
-
-.terminal-title-status.completed {
-  color: #3fb950;
-}
-
-/* Right column: actions + info badge */
+/* Right side: info badge + actions */
 .terminal-title-right {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  align-self: stretch;
+  align-items: center;
   flex-shrink: 0;
+  gap: 4px;
 }
 
 .terminal-title-actions {
@@ -134,15 +107,19 @@
 }
 
 .terminal-title-info-badge {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.5px;
   text-transform: uppercase;
   color: #b0b0b0;
   white-space: nowrap;
   padding: 0 2px;
-  margin-top: auto;
 }
+
+.terminal-title-badge-status { color: #6e7681; }
+.terminal-title-badge-status.working { color: var(--tm-accent); }
+.terminal-title-badge-status.needs-input { color: #d29922; }
+.terminal-title-badge-status.completed { color: #3fb950; }
 
 .terminal-content {
   flex: 1;

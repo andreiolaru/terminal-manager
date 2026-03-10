@@ -8,6 +8,15 @@
   user-select: none;
   position: relative;
   z-index: 10;
+  -webkit-app-region: drag;
+}
+
+/* Interactive children opt out of drag; scroll area stays draggable in empty space */
+.terminal-tabs-collapsed-actions,
+.terminal-tab,
+.template-launcher,
+.terminal-tabs-titlebar-toggle {
+  -webkit-app-region: no-drag;
 }
 
 .terminal-tabs-collapsed-actions {
@@ -280,6 +289,27 @@
 .template-manager-btn:focus-visible {
   outline: 1px solid var(--tm-accent);
   outline-offset: -1px;
+}
+
+/* Show menu bar toggle — aligned with titlebar hide button (4th from right, 3×46px offset) */
+.terminal-tabs-titlebar-toggle {
+  position: absolute;
+  right: 138px;
+  top: 0;
+  width: 46px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--tm-text-secondary);
+  cursor: pointer;
+}
+
+.terminal-tabs-titlebar-toggle:hover {
+  background: var(--tm-hover-bg);
+  color: var(--tm-text-primary);
 }
 
 /* Claude Code attention badge */

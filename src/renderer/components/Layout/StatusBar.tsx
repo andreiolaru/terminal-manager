@@ -70,7 +70,7 @@ function GlobalFontSize() {
   )
 }
 
-export default function StatusBar({ onToggleTitleBar, titleBarVisible }: { onToggleTitleBar: () => void; titleBarVisible: boolean }) {
+export default function StatusBar() {
   const trackedIds = useTrackedIds()
 
   return (
@@ -80,13 +80,6 @@ export default function StatusBar({ onToggleTitleBar, titleBarVisible }: { onTog
       ))}
       <div className="status-bar-spacer" />
       <GlobalFontSize />
-      <button
-        className="status-bar-window-btn"
-        onClick={onToggleTitleBar}
-        title={titleBarVisible ? 'Hide window controls' : 'Show window controls'}
-      >
-        {titleBarVisible ? '\u25B4' : '\u25BE'}
-      </button>
     </div>
   )
 }

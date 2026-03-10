@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import MainLayout from './components/Layout/MainLayout'
 import TitleBar from './components/Layout/TitleBar'
 import StatusBar from './components/Layout/StatusBar'
@@ -11,8 +11,9 @@ import { ipcApi, onShortcutSafe } from './lib/ipc-api'
 
 function App() {
   const addGroup = useTerminalStore((s) => s.addGroup)
+  const titleBarVisible = useTerminalStore((s) => s.titleBarVisible)
+  const toggleTitleBar = useTerminalStore((s) => s.toggleTitleBar)
   const didInit = useRef(false)
-  const [titleBarVisible, setTitleBarVisible] = useState(true)
 
   usePtyIpc()
   useShortcuts()
@@ -48,8 +49,8 @@ function App() {
 
   // Toggle title bar shortcut
   useEffect(() => {
-    return onShortcutSafe('toggle-titlebar', () => setTitleBarVisible((v) => !v))
-  }, [])
+    return onShortcutSafe('toggle-titlebar', toggleTitleBar)
+  }, [toggleTitleBar])
 
   useEffect(() => {
     if (!didInit.current) {
@@ -60,11 +61,11 @@ function App() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <TitleBar visible={titleBarVisible} onHide={() => setTitleBarVisible(false)} onToggle={() => setTitleBarVisible((v) => !v)} />
+      <TitleBar visible={titleBarVisible} onHide={toggleTitleBar} onToggle={toggleTitleBar} />
       <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
         <MainLayout />
       </div>
-      <StatusBar onToggleTitleBar={() => setTitleBarVisible((v) => !v)} titleBarVisible={titleBarVisible} />
+      <StatusBar />
     </div>
   )
 }

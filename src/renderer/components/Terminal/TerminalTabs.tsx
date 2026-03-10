@@ -29,7 +29,9 @@ export default function TerminalTabs() {
   const groups = useTerminalStore((s) => s.groups)
   const activeGroupId = useTerminalStore((s) => s.activeGroupId)
   const sidebarCollapsed = useTerminalStore((s) => s.sidebarCollapsed)
+  const titleBarVisible = useTerminalStore((s) => s.titleBarVisible)
   const toggleSidebar = useTerminalStore((s) => s.toggleSidebar)
+  const toggleTitleBar = useTerminalStore((s) => s.toggleTitleBar)
   const addTerminal = useTerminalStore((s) => s.addTerminal)
   const setActiveGroup = useTerminalStore((s) => s.setActiveGroup)
   const addGroup = useTerminalStore((s) => s.addGroup)
@@ -145,6 +147,19 @@ export default function TerminalTabs() {
         ))}
       </div>
       <TemplateLauncher onManageTemplates={() => setManagerOpen(true)} />
+      {!titleBarVisible && (
+        <button
+          className="terminal-tabs-titlebar-toggle"
+          onClick={toggleTitleBar}
+          title="Show menu bar"
+          aria-label="Show menu bar"
+        >
+          <svg width="10" height="10" viewBox="0 0 10 10">
+            <path d="M2 2l3 3 3-3" fill="none" stroke="currentColor" strokeWidth="1.2" />
+            <path d="M2 6l3 3 3-3" fill="none" stroke="currentColor" strokeWidth="1.2" />
+          </svg>
+        </button>
+      )}
       {managerOpen && createPortal(
         <TemplateManager onClose={() => setManagerOpen(false)} />,
         document.body

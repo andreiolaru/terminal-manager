@@ -29,6 +29,7 @@ export const useTerminalStore = create<TerminalState>()(
     nextTerminalNumber: 1,
     nextGroupNumber: 1,
     sidebarCollapsed: false,
+    titleBarVisible: true,
     globalFontSize: DEFAULT_FONT_SIZE,
 
     addGroup: (): string => {
@@ -339,6 +340,12 @@ export const useTerminalStore = create<TerminalState>()(
     toggleSidebar: (): void => {
       set((state) => {
         state.sidebarCollapsed = !state.sidebarCollapsed
+      })
+    },
+
+    toggleTitleBar: (): void => {
+      set((state) => {
+        state.titleBarVisible = !state.titleBarVisible
       })
     },
 

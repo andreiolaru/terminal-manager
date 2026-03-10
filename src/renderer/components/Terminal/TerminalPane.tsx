@@ -30,7 +30,6 @@ export default memo(function TerminalPane({ terminalId, groupId }: TerminalPaneP
   const lastCommand = useTerminalStore((s) => s.terminals[terminalId]?.lastCommand)
   const isAlive = useTerminalStore((s) => s.terminals[terminalId]?.isAlive ?? true)
   const claudeStatus = useTerminalStore((s) => s.terminals[terminalId]?.claudeStatus)
-  const claudeStatusTitle = useTerminalStore((s) => s.terminals[terminalId]?.claudeStatusTitle)
   const claudeModel = useTerminalStore((s) => s.terminals[terminalId]?.claudeModel)
   const claudeContext = useTerminalStore((s) => s.terminals[terminalId]?.claudeContext)
   const isActive = useTerminalStore(
@@ -55,11 +54,7 @@ export default memo(function TerminalPane({ terminalId, groupId }: TerminalPaneP
   const className = `terminal-pane${isActive ? ' active' : ''}${!isAlive ? ' dead' : ''}${statusClass}`
 
   const hasStatus = claudeStatus && claudeStatus !== 'not-tracked'
-  const statusText = hasStatus
-    ? (claudeStatusTitle
-      ? `${statusLabels[claudeStatus]} — ${claudeStatusTitle}`
-      : statusLabels[claudeStatus])
-    : null
+  const hasBadge = hasStatus || claudeModel || claudeContext
 
   return (
     <div className={className} onMouseDown={handleMouseDown}>
@@ -72,17 +67,23 @@ export default memo(function TerminalPane({ terminalId, groupId }: TerminalPaneP
         <div className="terminal-title-content">
           <span className="terminal-title-name">{name}</span>
           {lastCommand && (
-            <span className="terminal-title-command" title={lastCommand}>
-              {lastCommand.length > 200 ? lastCommand.slice(0, 200) + '\u2026' : lastCommand}
-            </span>
-          )}
-          {statusText && (
-            <span className={`terminal-title-status ${claudeStatus}`}>
-              {statusText}
+            <span className="terminal-title-command">
+              {' \u2014 '}{lastCommand.length > 150 ? lastCommand.slice(0, 150) + '\u2026' : lastCommand}
             </span>
           )}
         </div>
         <div className="terminal-title-right">
+          {hasBadge && (
+            <div className="terminal-title-info-badge">
+              {hasStatus && (
+                <span className={`terminal-title-badge-status ${claudeStatus}`}>
+                  {statusLabels[claudeStatus]}
+                </span>
+              )}
+              {hasStatus && (claudeModel || claudeContext) ? ' \u00B7 ' : ''}
+              {claudeModel}{claudeModel && claudeContext ? ' \u00B7 ' : ''}{claudeContext ? `Ctx: ${claudeContext}` : ''}
+            </div>
+          )}
           <div className="terminal-title-actions">
             <button
               onClick={(e) => { e.stopPropagation(); setFontMenuOpen(!fontMenuOpen) }}
@@ -107,11 +108,6 @@ export default memo(function TerminalPane({ terminalId, groupId }: TerminalPaneP
               ×
             </button>
           </div>
-          {(claudeModel || claudeContext) && (
-            <div className="terminal-title-info-badge">
-              {claudeModel}{claudeModel && claudeContext ? ' \u00B7 ' : ''}{claudeContext ? `Ctx: ${claudeContext}` : ''}
-            </div>
-          )}
         </div>
         {fontMenuOpen && (
           <FontSizeMenu
