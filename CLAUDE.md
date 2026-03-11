@@ -6,7 +6,7 @@ Personal-use Windows terminal manager (VS Code-style integrated terminal). Elect
 
 ## Tech Stack
 
-- **Electron 35** with electron-vite 3 (main/preload/renderer architecture)
+- **Electron 35** with electron-vite 5 + vite 7 (main/preload/renderer architecture)
 - **React 19 + TypeScript** (strict mode)
 - **@xterm/xterm 5.5** + FitAddon + WebglAddon
 - **node-pty 1.0** (native module, needs @electron/rebuild)
