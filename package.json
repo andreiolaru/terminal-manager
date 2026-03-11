@@ -8,6 +8,7 @@
     "build": "electron-vite build",
     "preview": "electron-vite preview",
     "postinstall": "electron-rebuild -f -w node-pty",
+    "dist": "electron-vite build && electron-builder --mac",
     "rebuild": "electron-builder install-app-deps",
     "test": "vitest run --config vitest.config.ts && vitest run --config vitest.config.renderer.ts",
     "test:watch": "vitest --config vitest.config.renderer.ts",

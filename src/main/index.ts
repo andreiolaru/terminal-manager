@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain, Menu, session } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, session } from 'electron'
 import { join } from 'path'
 import { PtyManager } from './pty-manager'
 import { ClaudeCodeDetector } from './claude-detector'
@@ -31,12 +31,19 @@ let forceClose = false
 let closeTimeout: ReturnType<typeof setTimeout> | null = null
 const CLOSE_TIMEOUT_MS = 5000
 
+const appIcon = nativeImage.createFromPath(join(__dirname, '../../resources/icon.png'))
+
 function createWindow(): void {
+  if (process.platform === 'darwin' && app.dock) {
+    app.dock.setIcon(appIcon)
+  }
+
   const mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
     frame: false,
     autoHideMenuBar: true,
+    icon: appIcon,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,

@@ -10,7 +10,7 @@ win:
   icon: resources/icon.ico
   signAndEditExecutable: false
 mac:
-  target: dir
+  target: dmg
   icon: resources/icon.icns
   category: public.app-category.developer-tools
 npmRebuild: false
