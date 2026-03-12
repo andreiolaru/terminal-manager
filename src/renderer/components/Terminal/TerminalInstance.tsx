@@ -30,6 +30,38 @@ const persistedTerminals = new Map<string, {
 
 import { searchAddonRegistry } from '../../lib/search-registry'
 
+/** Copy selection with soft-wrapped lines joined into single logical lines. */
+function getCleanSelection(terminal: Terminal): string {
+  const sel = terminal.getSelectionPosition()
+  if (!sel) return terminal.getSelection()
+
+  const buffer = terminal.buffer.active
+  const lines: string[] = []
+
+  for (let row = sel.start.y; row <= sel.end.y; row++) {
+    const line = buffer.getLine(row)
+    if (!line) continue
+
+    const startCol = row === sel.start.y ? sel.start.x : 0
+    const endCol = row === sel.end.y ? sel.end.x : terminal.cols
+
+    let text = ''
+    for (let col = startCol; col < endCol; col++) {
+      const cell = line.getCell(col)
+      if (cell) text += cell.getChars() || ' '
+    }
+
+    // Wrapped lines are continuations — append without newline
+    if (line.isWrapped && lines.length > 0) {
+      lines[lines.length - 1] += text
+    } else {
+      lines.push(text)
+    }
+  }
+
+  return lines.map((l) => l.trimEnd()).join('\n')
+}
+
 function pasteWithWarning(terminal: Terminal): void {
   const text = window.electronAPI.clipboardReadText()
   if (!text) return
@@ -121,7 +153,7 @@ export default function TerminalInstance({ terminalId, isVisible, isActive }: Te
 
         // Ctrl+C copies selected text instead of sending SIGINT when there's a selection
         if (e.ctrlKey && !e.shiftKey && e.key === 'c' && terminal.hasSelection()) {
-          window.electronAPI.clipboardWriteText(terminal.getSelection())
+          window.electronAPI.clipboardWriteText(getCleanSelection(terminal))
           terminal.clearSelection()
           return false
         }
@@ -315,7 +347,7 @@ export default function TerminalInstance({ terminalId, isVisible, isActive }: Te
       onContextMenu={(e) => {
         e.preventDefault()
         if (terminalRef.current?.hasSelection()) {
-          window.electronAPI.clipboardWriteText(terminalRef.current.getSelection())
+          window.electronAPI.clipboardWriteText(getCleanSelection(terminalRef.current))
           terminalRef.current.clearSelection()
         } else if (terminalRef.current) {
           pasteWithWarning(terminalRef.current)
