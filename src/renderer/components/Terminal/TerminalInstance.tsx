@@ -32,6 +32,7 @@ const persistedTerminals = new Map<string, {
 
 import { searchAddonRegistry } from '../../lib/search-registry'
 import { serializeAddonRegistry } from '../../lib/serialize-registry'
+import { pendingScrollback } from '../../lib/pending-scrollback'
 import { registerFileLinkProvider } from '../../lib/file-link-provider'
 
 /** Copy selection with soft-wrapped lines joined into single logical lines. */
@@ -142,6 +143,23 @@ export default function TerminalInstance({ terminalId, isVisible, isActive }: Te
       fitAddon = new FitAddon()
       terminal.loadAddon(fitAddon)
 
+      // Search — exposed via searchAddonRegistry for SearchBar component
+      searchAddon = new SearchAddon()
+      terminal.loadAddon(searchAddon)
+      searchAddonRegistry.set(terminalId, searchAddon)
+
+      // Serialize — exposed via serializeAddonRegistry for session save
+      serializeAddon = new SerializeAddon()
+      terminal.loadAddon(serializeAddon)
+      serializeAddonRegistry.set(terminalId, serializeAddon)
+
+      // Restore scrollback BEFORE open() to avoid rendering intermediate frames
+      const savedScrollback = pendingScrollback.get(terminalId)
+      if (savedScrollback) {
+        terminal.write(savedScrollback)
+        pendingScrollback.delete(terminalId)
+      }
+
       terminal.attachCustomKeyEventHandler((e) => {
         // Let Electron menu accelerators handle these combos
         if (e.type !== 'keydown') return true
@@ -201,23 +219,6 @@ export default function TerminalInstance({ terminalId, isVisible, isActive }: Te
         return useTerminalStore.getState().terminals[terminalId]?.cwd || ''
       })
 
-      // Search — exposed via searchAddonRegistry for SearchBar component
-      searchAddon = new SearchAddon()
-      terminal.loadAddon(searchAddon)
-      searchAddonRegistry.set(terminalId, searchAddon)
-
-      // Serialize — exposed via serializeAddonRegistry for session save
-      serializeAddon = new SerializeAddon()
-      terminal.loadAddon(serializeAddon)
-      serializeAddonRegistry.set(terminalId, serializeAddon)
-
-      // Restore scrollback from previous session if available
-      const savedScrollback = useTerminalStore.getState().terminals[terminalId]?.scrollback
-      if (savedScrollback) {
-        terminal.write(savedScrollback)
-        useTerminalStore.getState().clearScrollback(terminalId)
-      }
-
       // Visual bell — brief flash on BEL character
       terminal.onBell(() => {
         containerRef.current?.classList.add('terminal-bell')
@@ -225,9 +226,20 @@ export default function TerminalInstance({ terminalId, isVisible, isActive }: Te
       })
     }
 
-    fitAddon.fit()
     terminalRef.current = terminal
     fitAddonRef.current = fitAddon
+
+    if (isReattach) {
+      // Defer fit after reattach — the new container needs a layout pass before
+      // fitAddon can measure the correct dimensions (otherwise the terminal
+      // keeps its old size after a sibling pane is closed).
+      requestAnimationFrame(() => {
+        fitAddon.fit()
+        ipcApi.resizePty(terminalId, terminal.cols, terminal.rows)
+      })
+    } else {
+      fitAddon.fit()
+    }
 
     // Capture claude flag at mount time for cleanup
     const isClaudeTerminal = useTerminalStore.getState().terminals[terminalId]?.claudeCode ?? false
