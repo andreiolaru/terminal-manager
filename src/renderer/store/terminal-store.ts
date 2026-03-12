@@ -1,9 +1,10 @@
 import { create } from 'zustand'
-import { persist, createJSONStorage } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
 import { v4 as uuid } from 'uuid'
 import type { TerminalState, TerminalGroup, NavigationDirection } from './types'
 import type { LayoutTemplate } from '../../shared/template-types'
+import type { SessionData } from '../../shared/session-types'
+import { pendingScrollback } from '../lib/pending-scrollback'
 import { DEFAULT_SHELL, DEFAULT_FONT_SIZE } from '../lib/constants'
 import { destroyPtySafe } from '../lib/ipc-api'
 import { splitNode as splitTreeNode, removeNode, collectLeafIds, containsLeaf, findAdjacentTerminal } from '../lib/tree-utils'
@@ -13,15 +14,43 @@ function findGroupForTerminal(groups: TerminalGroup[], terminalId: string): Term
   return groups.find((g) => containsLeaf(g.splitTree, terminalId))
 }
 
-// No-op storage — scaffold for future session persistence
-const noopStorage = createJSONStorage(() => ({
-  getItem: () => null,
-  setItem: () => {},
-  removeItem: () => {}
-}))
+export function getSessionData(state: TerminalState): SessionData {
+  const terminals: SessionData['terminals'] = {}
+  for (const [id, t] of Object.entries(state.terminals)) {
+    terminals[id] = {
+      id: t.id,
+      name: t.name,
+      shell: t.shell,
+      cwd: t.cwd,
+      ...(t.claudeCode ? { claudeCode: true } : {}),
+      ...(t.fontSize !== undefined ? { fontSize: t.fontSize } : {})
+    }
+  }
+
+  const groups: SessionData['groups'] = state.groups.map((g) => ({
+    id: g.id,
+    label: g.label,
+    splitTree: g.splitTree,
+    activeTerminalId: g.activeTerminalId,
+    ...(g.icon ? { icon: g.icon } : {}),
+    ...(g.color ? { color: g.color } : {}),
+    ...(g.backgroundGradient ? { backgroundGradient: g.backgroundGradient } : {}),
+    ...(g.fontSize !== undefined ? { fontSize: g.fontSize } : {})
+  }))
+
+  return {
+    terminals,
+    groups,
+    activeGroupId: state.activeGroupId,
+    nextTerminalNumber: state.nextTerminalNumber,
+    nextGroupNumber: state.nextGroupNumber,
+    sidebarCollapsed: state.sidebarCollapsed,
+    titleBarVisible: state.titleBarVisible,
+    globalFontSize: state.globalFontSize
+  }
+}
 
 export const useTerminalStore = create<TerminalState>()(
-  persist(
   immer((set) => ({
     terminals: {},
     groups: [],
@@ -386,15 +415,47 @@ export const useTerminalStore = create<TerminalState>()(
           group.zoomedTerminalId = group.zoomedTerminalId === id ? undefined : id
         }
       })
+    },
+
+    restoreSession: (session: SessionData): void => {
+      pendingScrollback.clear()
+      for (const [id, t] of Object.entries(session.terminals)) {
+        if (t.scrollback) {
+          pendingScrollback.set(id, t.scrollback)
+        }
+      }
+      set((state) => {
+        const now = Date.now()
+        state.terminals = {}
+        for (const [id, t] of Object.entries(session.terminals)) {
+          state.terminals[id] = {
+            id: t.id,
+            name: t.name,
+            shell: t.shell,
+            cwd: t.cwd,
+            isAlive: true,
+            createdAt: now,
+            claudeCode: t.claudeCode,
+            fontSize: t.fontSize
+          }
+        }
+        state.groups = session.groups.map((g) => ({
+          id: g.id,
+          label: g.label,
+          splitTree: g.splitTree,
+          activeTerminalId: g.activeTerminalId,
+          icon: g.icon,
+          color: g.color,
+          backgroundGradient: g.backgroundGradient,
+          fontSize: g.fontSize
+        }))
+        state.activeGroupId = session.activeGroupId
+        state.nextTerminalNumber = session.nextTerminalNumber
+        state.nextGroupNumber = session.nextGroupNumber
+        state.sidebarCollapsed = session.sidebarCollapsed ?? false
+        state.titleBarVisible = session.titleBarVisible ?? true
+        state.globalFontSize = session.globalFontSize ?? DEFAULT_FONT_SIZE
+      })
     }
-  })),
-  {
-    name: 'terminal-manager-state',
-    storage: noopStorage,
-    partialize: (state) => ({
-      nextTerminalNumber: state.nextTerminalNumber,
-      nextGroupNumber: state.nextGroupNumber
-    })
-  }
-  )
+  }))
 )

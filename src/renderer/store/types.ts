@@ -1,4 +1,5 @@
-export type TerminalId = string
+export type { TerminalId, SplitDirection, SplitLeaf, SplitBranch, SplitNode } from '../../shared/split-types'
+import type { TerminalId } from '../../shared/split-types'
 
 export type ClaudeCodeStatus = 'not-tracked' | 'idle' | 'working' | 'needs-input' | 'completed'
 
@@ -19,23 +20,7 @@ export interface TerminalInfo {
   fontSize?: number
 }
 
-export type SplitDirection = 'horizontal' | 'vertical'
 export type NavigationDirection = 'left' | 'right' | 'up' | 'down'
-
-export interface SplitLeaf {
-  type: 'leaf'
-  terminalId: TerminalId
-}
-
-export interface SplitBranch {
-  type: 'branch'
-  direction: SplitDirection
-  first: SplitNode
-  second: SplitNode
-  ratio: number
-}
-
-export type SplitNode = SplitLeaf | SplitBranch
 
 export interface TerminalGroup {
   id: string
@@ -90,4 +75,5 @@ export interface TerminalState {
   setGroupFontSize: (groupId: string, size: number | undefined) => void
   setTerminalFontSize: (id: TerminalId, size: number | undefined) => void
   toggleZoom: (id: TerminalId) => void
+  restoreSession: (session: import('../../shared/session-types').SessionData) => void
 }

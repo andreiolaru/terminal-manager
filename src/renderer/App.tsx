@@ -2,12 +2,27 @@ import { useEffect, useRef } from 'react'
 import MainLayout from './components/Layout/MainLayout'
 import TitleBar from './components/Layout/TitleBar'
 import StatusBar from './components/Layout/StatusBar'
-import { useTerminalStore } from './store/terminal-store'
+import { useTerminalStore, getSessionData } from './store/terminal-store'
+import { serializeAddonRegistry, SERIALIZE_SCROLLBACK_ROWS } from './lib/serialize-registry'
 import { usePtyIpc } from './hooks/usePtyIpc'
 import { useShortcuts } from './hooks/useShortcuts'
 import { initClaudeStatusDispatcher } from './lib/claude-status-dispatcher'
 import { confirmAppClose } from './lib/claude-close-guard'
 import { ipcApi, onShortcutSafe } from './lib/ipc-api'
+
+function getSessionDataWithScrollback(): import('../shared/session-types').SessionData {
+  const session = getSessionData(useTerminalStore.getState())
+  for (const [id, addon] of serializeAddonRegistry) {
+    if (session.terminals[id]) {
+      try {
+        session.terminals[id].scrollback = addon.serialize({ scrollback: SERIALIZE_SCROLLBACK_ROWS })
+      } catch {
+        // Serialize can fail if terminal is disposed
+      }
+    }
+  }
+  return session
+}
 
 function App() {
   const addGroup = useTerminalStore((s) => s.addGroup)
@@ -27,6 +42,8 @@ function App() {
   useEffect(() => {
     if (!ipcApi?.onAppCloseRequested) return
     return ipcApi.onAppCloseRequested(() => {
+      // Save session with scrollback immediately before closing
+      ipcApi.saveSession(getSessionDataWithScrollback())
       confirmAppClose().then((ok) => {
         if (ok) ipcApi.confirmAppClose()
         else ipcApi.cancelAppClose()
@@ -52,12 +69,33 @@ function App() {
     return onShortcutSafe('toggle-titlebar', toggleTitleBar)
   }, [toggleTitleBar])
 
+  // Load session on startup, or create a fresh group
   useEffect(() => {
     if (!didInit.current) {
       didInit.current = true
-      addGroup()
+      ipcApi.loadSession().then((session) => {
+        if (session && session.groups.length > 0) {
+          useTerminalStore.getState().restoreSession(session)
+        } else {
+          addGroup()
+        }
+      }).catch(() => {
+        addGroup()
+      })
     }
   }, [addGroup])
+
+  // Auto-save session on state changes (debounced 2s)
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>
+    const unsub = useTerminalStore.subscribe(() => {
+      clearTimeout(timer)
+      timer = setTimeout(() => {
+        ipcApi.saveSession(getSessionData(useTerminalStore.getState()))
+      }, 2000)
+    })
+    return () => { unsub(); clearTimeout(timer) }
+  }, [])
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>

@@ -1,10 +1,11 @@
-import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, session } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, screen, session } from 'electron'
 import { join } from 'path'
 import { PtyManager } from './pty-manager'
 import { ClaudeCodeDetector } from './claude-detector'
 import { NotificationManager } from './notification-manager'
-import { registerIpcHandlers } from './ipc-handlers'
+import { registerIpcHandlers, getSharedStateStorage } from './ipc-handlers'
 import { IPC_CHANNELS, SHORTCUT_NAMES } from '../shared/ipc-types'
+import type { WindowState } from '../shared/session-types'
 
 const SHORTCUT_ACCELERATORS: Record<string, string> = {
   'new-terminal': 'CmdOrCtrl+Shift+T',
@@ -34,14 +35,29 @@ const CLOSE_TIMEOUT_MS = 5000
 
 const appIcon = nativeImage.createFromPath(join(__dirname, '../../resources/icon.png'))
 
+function isWindowStateOnScreen(state: WindowState): boolean {
+  const displays = screen.getAllDisplays()
+  const centerX = state.x + state.width / 2
+  const centerY = state.y + state.height / 2
+  return displays.some((display) => {
+    const { x, y, width, height } = display.workArea
+    return centerX >= x && centerX <= x + width && centerY >= y && centerY <= y + height
+  })
+}
+
 function createWindow(): void {
   if (process.platform === 'darwin' && app.dock) {
     app.dock.setIcon(appIcon)
   }
 
+  const stateStorage = getSharedStateStorage()
+  const savedWindowState = stateStorage.loadWindowState()
+  const usesSavedBounds = savedWindowState && !savedWindowState.isMaximized && isWindowStateOnScreen(savedWindowState)
+
   const mainWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
+    width: usesSavedBounds ? savedWindowState.width : 1200,
+    height: usesSavedBounds ? savedWindowState.height : 800,
+    ...(usesSavedBounds ? { x: savedWindowState.x, y: savedWindowState.y } : {}),
     frame: false,
     autoHideMenuBar: true,
     icon: appIcon,
@@ -52,6 +68,10 @@ function createWindow(): void {
       sandbox: false // Required: preload bundle uses require() for electron modules
     }
   })
+
+  if (savedWindowState?.isMaximized) {
+    mainWindow.maximize()
+  }
 
   // C1: Content Security Policy — relaxed in dev for Vite HMR
   if (!isDev) {
@@ -100,7 +120,15 @@ function createWindow(): void {
     }
   })
 
-  ipcMain.on(IPC_CHANNELS.APP_CLOSE_CONFIRMED, doForceClose)
+  ipcMain.on(IPC_CHANNELS.APP_CLOSE_CONFIRMED, () => {
+    if (!mainWindow.isDestroyed()) {
+      stateStorage.saveWindowState({
+        ...mainWindow.getBounds(),
+        isMaximized: mainWindow.isMaximized()
+      })
+    }
+    doForceClose()
+  })
 
   ipcMain.on(IPC_CHANNELS.APP_CLOSE_CANCELLED, () => {
     if (closeTimeout) { clearTimeout(closeTimeout); closeTimeout = null }
