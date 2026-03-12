@@ -1,5 +1,8 @@
 import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, screen, session } from 'electron'
 import { join } from 'path'
+
+// Suppress Chromium GPU shader disk-cache errors (stale lock after dev restarts)
+app.commandLine.appendSwitch('disable-gpu-shader-disk-cache')
 import { PtyManager } from './pty-manager'
 import { ClaudeCodeDetector } from './claude-detector'
 import { NotificationManager } from './notification-manager'
