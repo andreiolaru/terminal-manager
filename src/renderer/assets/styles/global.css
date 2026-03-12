@@ -36,8 +36,8 @@
   --tm-tab-hover-bg: #333333;
 
   /* Scrollbar */
-  --tm-scrollbar-thumb: rgba(255, 255, 255, 0.15);
-  --tm-scrollbar-thumb-hover: rgba(255, 255, 255, 0.25);
+  --tm-scrollbar-thumb: rgba(255, 255, 255, 0.06);
+  --tm-scrollbar-thumb-hover: rgba(255, 255, 255, 0.14);
 
   /* Allotment overrides */
   --focus-border: var(--tm-accent);
@@ -59,10 +59,10 @@ html, body, #root {
   color: #ffffff;
 }
 
-/* Thin, unobtrusive scrollbars — visible only on hover */
+/* Scrollbars — visible only on hover */
 ::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
+  width: 10px;
+  height: 10px;
 }
 
 ::-webkit-scrollbar-track {

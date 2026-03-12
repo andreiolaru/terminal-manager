@@ -40,6 +40,19 @@
   padding: 4px;
 }
 
+/* Overlay scrollbar — sits on top of terminal text, doesn't consume width */
+.terminal-container .xterm-viewport {
+  overflow-y: overlay !important;
+}
+
+.terminal-container .xterm-viewport::-webkit-scrollbar-thumb {
+  background: var(--tm-scrollbar-thumb);
+}
+
+.terminal-container .xterm-viewport::-webkit-scrollbar-thumb:hover {
+  background: var(--tm-scrollbar-thumb-hover);
+}
+
 .terminal-bell::after {
   content: '';
   position: absolute;
