@@ -1,10 +1,14 @@
 import { ipcMain, BrowserWindow, dialog, shell } from 'electron'
 import { existsSync } from 'fs'
+import { execFile } from 'child_process'
+import { resolve, isAbsolute } from 'path'
 import { PtyManager } from './pty-manager'
 import { TemplateStorage } from './template-storage'
+import { StateStorage } from './state-storage'
 import { IPC_CHANNELS } from '../shared/ipc-types'
 import type { PtyCreateOptions } from '../shared/ipc-types'
 import type { LayoutTemplate } from '../shared/template-types'
+import type { SessionData } from '../shared/session-types'
 import type { ClaudeCodeDetector } from './claude-detector'
 
 const ALLOWED_SHELLS_WIN = new Set([
@@ -45,6 +49,16 @@ let templateStorage: TemplateStorage | null = null
 function getTemplateStorage(): TemplateStorage {
   if (!templateStorage) templateStorage = new TemplateStorage()
   return templateStorage
+}
+
+let stateStorageInstance: StateStorage | null = null
+function getStateStorage(): StateStorage {
+  if (!stateStorageInstance) stateStorageInstance = new StateStorage()
+  return stateStorageInstance
+}
+
+export function getSharedStateStorage(): StateStorage {
+  return getStateStorage()
 }
 
 export function registerIpcHandlers(
@@ -199,12 +213,48 @@ export function registerIpcHandlers(
     }
   })
 
+  ipcMain.on(IPC_CHANNELS.OPEN_IN_EDITOR, (_, filePath: string, cwd?: string) => {
+    // Resolve relative paths against the terminal's working directory
+    let resolved = filePath
+    // Strip line:col suffix for the existence check, keep for --goto
+    const match = resolved.match(/^(.+?)(?::(\d+)(?::(\d+))?)?$/)
+    if (!match) return
+
+    let baseFile = match[1]
+    const line = match[2]
+    const col = match[3]
+
+    if (!isAbsolute(baseFile) && cwd) {
+      baseFile = resolve(cwd, baseFile)
+    }
+
+    if (!existsSync(baseFile)) return
+
+    // Build the --goto argument: file:line:col
+    let gotoArg = baseFile
+    if (line) gotoArg += `:${line}`
+    if (col) gotoArg += `:${col}`
+
+    const editor = process.platform === 'win32' ? 'code.cmd' : 'code'
+    execFile(editor, ['-r', '--goto', gotoArg], { timeout: 5000 }, () => {
+      // Ignore errors (VS Code not installed, etc.)
+    })
+  })
+
   ipcMain.on(IPC_CHANNELS.CLAUDE_REGISTER, (_, id: string) => {
     detector?.register(id)
   })
 
   ipcMain.on(IPC_CHANNELS.CLAUDE_UNREGISTER, (_, id: string) => {
     detector?.unregister(id)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.SESSION_LOAD, async () => {
+    return getStateStorage().loadSession()
+  })
+
+  ipcMain.on(IPC_CHANNELS.SESSION_SAVE, (_, data: SessionData) => {
+    getStateStorage().saveSession(data)
   })
 
 }

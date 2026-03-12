@@ -5,6 +5,7 @@ import { WebglAddon } from '@xterm/addon-webgl'
 import { SearchAddon } from '@xterm/addon-search'
 import { WebLinksAddon } from '@xterm/addon-web-links'
 import { Unicode11Addon } from '@xterm/addon-unicode11'
+import { SerializeAddon } from '@xterm/addon-serialize'
 import { ipcApi } from '../../lib/ipc-api'
 import { registerTerminal, unregisterTerminal, registerFirstDataCallback } from '../../lib/pty-dispatcher'
 import { useTerminalStore } from '../../store/terminal-store'
@@ -26,9 +27,12 @@ const persistedTerminals = new Map<string, {
   terminal: Terminal
   fitAddon: FitAddon
   searchAddon: SearchAddon
+  serializeAddon: SerializeAddon
 }>()
 
 import { searchAddonRegistry } from '../../lib/search-registry'
+import { serializeAddonRegistry } from '../../lib/serialize-registry'
+import { registerFileLinkProvider } from '../../lib/file-link-provider'
 
 /** Copy selection with soft-wrapped lines joined into single logical lines. */
 function getCleanSelection(terminal: Terminal): string {
@@ -101,6 +105,7 @@ export default function TerminalInstance({ terminalId, isVisible, isActive }: Te
     let terminal: Terminal
     let fitAddon: FitAddon
     let searchAddon: SearchAddon
+    let serializeAddon: SerializeAddon
     let isReattach = false
 
     if (persisted) {
@@ -108,7 +113,9 @@ export default function TerminalInstance({ terminalId, isVisible, isActive }: Te
       terminal = persisted.terminal
       fitAddon = persisted.fitAddon
       searchAddon = persisted.searchAddon
+      serializeAddon = persisted.serializeAddon
       searchAddonRegistry.set(terminalId, searchAddon)
+      serializeAddonRegistry.set(terminalId, serializeAddon)
       persistedTerminals.delete(terminalId)
       isReattach = true
 
@@ -189,10 +196,27 @@ export default function TerminalInstance({ terminalId, isVisible, isActive }: Te
       })
       terminal.loadAddon(webLinks)
 
+      // Clickable file paths — open in VS Code via `code --goto`
+      registerFileLinkProvider(terminal, () => {
+        return useTerminalStore.getState().terminals[terminalId]?.cwd || ''
+      })
+
       // Search — exposed via searchAddonRegistry for SearchBar component
       searchAddon = new SearchAddon()
       terminal.loadAddon(searchAddon)
       searchAddonRegistry.set(terminalId, searchAddon)
+
+      // Serialize — exposed via serializeAddonRegistry for session save
+      serializeAddon = new SerializeAddon()
+      terminal.loadAddon(serializeAddon)
+      serializeAddonRegistry.set(terminalId, serializeAddon)
+
+      // Restore scrollback from previous session if available
+      const savedScrollback = useTerminalStore.getState().terminals[terminalId]?.scrollback
+      if (savedScrollback) {
+        terminal.write(savedScrollback)
+        useTerminalStore.getState().clearScrollback(terminalId)
+      }
 
       // Visual bell — brief flash on BEL character
       terminal.onBell(() => {
@@ -293,10 +317,11 @@ export default function TerminalInstance({ terminalId, isVisible, isActive }: Te
       // If terminal still exists in store, this is a tree restructure (split) — persist for reattach
       const stillInStore = !!useTerminalStore.getState().terminals[terminalId]
       if (stillInStore) {
-        persistedTerminals.set(terminalId, { terminal, fitAddon, searchAddon })
+        persistedTerminals.set(terminalId, { terminal, fitAddon, searchAddon, serializeAddon })
       } else {
         // Terminal was removed — full cleanup
         searchAddonRegistry.delete(terminalId)
+        serializeAddonRegistry.delete(terminalId)
         ipcApi.unregisterClaude(terminalId)
         unregisterTerminal(terminalId)
         terminal.dispose()

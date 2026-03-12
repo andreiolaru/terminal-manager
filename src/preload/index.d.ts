@@ -1,5 +1,6 @@
 import type { PtyCreateOptions } from '../shared/ipc-types'
 import type { LayoutTemplate } from '../shared/template-types'
+import type { SessionData } from '../shared/session-types'
 
 export interface ElectronAPI {
   createPty(options: PtyCreateOptions): Promise<void>
@@ -34,6 +35,9 @@ export interface ElectronAPI {
   clipboardWriteText(text: string): void
   clipboardReadText(): string
   openExternal(url: string): void
+  openInEditor(filePath: string, cwd?: string): void
+  loadSession(): Promise<SessionData | null>
+  saveSession(data: SessionData): void
 }
 
 declare global {

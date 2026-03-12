@@ -28,6 +28,9 @@ export const IPC_CHANNELS = {
   WINDOW_SET_ALWAYS_ON_TOP: 'window:set-always-on-top',
   WINDOW_IS_ALWAYS_ON_TOP: 'window:is-always-on-top',
   OPEN_EXTERNAL: 'shell:open-external',
+  OPEN_IN_EDITOR: 'shell:open-in-editor',
+  SESSION_LOAD: 'session:load',
+  SESSION_SAVE: 'session:save',
 } as const
 
 export const SHORTCUT_NAMES = [

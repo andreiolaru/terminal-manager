@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer, clipboard } from 'electron'
 import { IPC_CHANNELS, SHORTCUT_NAMES } from '../shared/ipc-types'
 import type { PtyCreateOptions, ShortcutName } from '../shared/ipc-types'
 import type { LayoutTemplate } from '../shared/template-types'
+import type { SessionData } from '../shared/session-types'
 
 const shortcutWhitelist = new Set<string>(SHORTCUT_NAMES)
 
@@ -160,6 +161,18 @@ const electronAPI = {
 
   openExternal(url: string): void {
     ipcRenderer.send(IPC_CHANNELS.OPEN_EXTERNAL, url)
+  },
+
+  openInEditor(filePath: string, cwd?: string): void {
+    ipcRenderer.send(IPC_CHANNELS.OPEN_IN_EDITOR, filePath, cwd)
+  },
+
+  loadSession(): Promise<SessionData | null> {
+    return ipcRenderer.invoke(IPC_CHANNELS.SESSION_LOAD)
+  },
+
+  saveSession(data: SessionData): void {
+    ipcRenderer.send(IPC_CHANNELS.SESSION_SAVE, data)
   },
 
 }
