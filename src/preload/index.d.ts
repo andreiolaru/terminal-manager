@@ -29,6 +29,10 @@ export interface ElectronAPI {
   windowClose(): void
   windowIsMaximized(): Promise<boolean>
   windowMenuAction(action: string): void
+  windowSetAlwaysOnTop(flag: boolean): void
+  windowIsAlwaysOnTop(): Promise<boolean>
+  clipboardWriteText(text: string): void
+  clipboardReadText(): string
 }
 
 declare global {

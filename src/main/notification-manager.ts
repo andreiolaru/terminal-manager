@@ -45,9 +45,15 @@ export class NotificationManager {
     notification.on('click', () => {
       const w = this.getWindow()
       if (w) {
-        w.restore()
+        const wasMaximized = w.isMaximized()
+        if (w.isMinimized()) {
+          w.restore()
+        }
         w.show()
         w.focus()
+        if (wasMaximized && !w.isMaximized()) {
+          w.maximize()
+        }
         w.webContents.send(IPC_CHANNELS.NOTIFICATION_FOCUS_TERMINAL, terminalId)
       }
     })

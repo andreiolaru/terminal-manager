@@ -86,6 +86,14 @@ export default function TerminalInstance({ terminalId, isVisible, isActive }: Te
       terminal.attachCustomKeyEventHandler((e) => {
         // Let Electron menu accelerators handle these combos
         if (e.type !== 'keydown') return true
+
+        // Ctrl+C copies selected text instead of sending SIGINT when there's a selection
+        if (e.ctrlKey && !e.shiftKey && e.key === 'c' && terminal.hasSelection()) {
+          window.electronAPI.clipboardWriteText(terminal.getSelection())
+          terminal.clearSelection()
+          return false
+        }
+
         if (e.ctrlKey && e.shiftKey && ['T', 'W', 'D', 'E', 'B'].includes(e.key)) return false
         if (e.ctrlKey && !e.shiftKey && e.key === 'b') return false
         if (e.ctrlKey && e.key === 'Tab') return false
@@ -249,15 +257,16 @@ export default function TerminalInstance({ terminalId, isVisible, isActive }: Te
       ref={containerRef}
       className="terminal-container"
       style={{ display: isVisible ? 'block' : 'none' }}
-      onContextMenu={async (e) => {
+      onContextMenu={(e) => {
         e.preventDefault()
-        try {
-          const text = await navigator.clipboard.readText()
+        if (terminalRef.current?.hasSelection()) {
+          window.electronAPI.clipboardWriteText(terminalRef.current.getSelection())
+          terminalRef.current.clearSelection()
+        } else {
+          const text = window.electronAPI.clipboardReadText()
           if (text && terminalRef.current) {
             terminalRef.current.paste(text)
           }
-        } catch {
-          // Clipboard access denied or empty
         }
       }}
     />

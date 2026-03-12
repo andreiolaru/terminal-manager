@@ -291,10 +291,10 @@
   outline-offset: -1px;
 }
 
-/* Show menu bar toggle — aligned with titlebar hide button (4th from right, 3×46px offset) */
+/* Show menu bar toggle — aligned with titlebar hide button (5th from right, 4×46px offset) */
 .terminal-tabs-titlebar-toggle {
   position: absolute;
-  right: 138px;
+  right: 184px;
   top: 0;
   width: 46px;
   height: 100%;

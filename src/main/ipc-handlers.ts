@@ -115,7 +115,8 @@ export function registerIpcHandlers(
     async (event, title: string, message: string, detail: string): Promise<boolean> => {
       const win = BrowserWindow.fromWebContents(event.sender)
       if (!win) return true
-      win.setAlwaysOnTop(true)
+      const wasOnTop = win.isAlwaysOnTop()
+      win.setAlwaysOnTop(true, 'floating')
       try {
         const { response } = await dialog.showMessageBox(win, {
           type: 'warning',
@@ -129,7 +130,7 @@ export function registerIpcHandlers(
         })
         return response === 0
       } finally {
-        win.setAlwaysOnTop(false)
+        if (!wasOnTop) win.setAlwaysOnTop(false)
       }
     }
   )
@@ -164,16 +165,27 @@ export function registerIpcHandlers(
       case 'zoom-out': win.webContents.setZoomLevel(win.webContents.getZoomLevel() - 0.5); break
       case 'zoom-reset': win.webContents.setZoomLevel(0); break
       case 'toggle-devtools': win.webContents.toggleDevTools(); break
-      case 'about':
-        win.setAlwaysOnTop(true)
+      case 'about': {
+        const wasOnTop = win.isAlwaysOnTop()
+        win.setAlwaysOnTop(true, 'floating')
         dialog.showMessageBox(win, {
           type: 'info',
           title: 'About Terminal Manager',
           message: 'Terminal Manager',
           detail: 'A VS Code-style integrated terminal manager.\nBuilt with Electron + React + xterm.js.\nBy Andrei Olaru',
-        }).finally(() => win.setAlwaysOnTop(false))
+        }).finally(() => { if (!wasOnTop) win.setAlwaysOnTop(false) })
         break
+      }
     }
+  })
+
+  ipcMain.on(IPC_CHANNELS.WINDOW_SET_ALWAYS_ON_TOP, (event, flag: boolean) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    if (win) win.setAlwaysOnTop(flag, 'floating')
+  })
+
+  ipcMain.handle(IPC_CHANNELS.WINDOW_IS_ALWAYS_ON_TOP, (event) => {
+    return BrowserWindow.fromWebContents(event.sender)?.isAlwaysOnTop() ?? false
   })
 
   ipcMain.on(IPC_CHANNELS.CLAUDE_REGISTER, (_, id: string) => {

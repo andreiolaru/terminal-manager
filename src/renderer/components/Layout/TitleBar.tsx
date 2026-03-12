@@ -90,14 +90,22 @@ function getMenus(onToggle: () => void): Record<string, MenuEntry[]> {
 
 export default function TitleBar({ visible, onHide, onToggle }: { visible: boolean; onHide: () => void; onToggle: () => void }) {
   const [maximized, setMaximized] = useState(false)
+  const [pinned, setPinned] = useState(false)
   const [openMenu, setOpenMenu] = useState<string | null>(null)
   const menuBarRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (visible) {
       ipcApi.windowIsMaximized?.().then(setMaximized)
+      ipcApi.windowIsAlwaysOnTop?.().then(setPinned)
     }
   }, [visible])
+
+  const handlePin = (): void => {
+    const next = !pinned
+    setPinned(next)
+    ipcApi.windowSetAlwaysOnTop(next)
+  }
 
   useEffect(() => {
     if (!openMenu) return
@@ -155,6 +163,11 @@ export default function TitleBar({ visible, onHide, onToggle }: { visible: boole
       </div>
       <div className="titlebar-drag" />
       <div className="titlebar-controls">
+        <button className={`titlebar-btn${pinned ? ' titlebar-pin-active' : ''}`} onClick={handlePin} title={pinned ? 'Unpin window' : 'Pin on top'}>
+          <svg width="10" height="10" viewBox="0 0 10 10">
+            <path d="M5 1v6M3 3l2-2 2 2M3 9h4" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+          </svg>
+        </button>
         <button className="titlebar-btn" onClick={onHide} title="Hide title bar">
           <svg width="10" height="10" viewBox="0 0 10 10">
             <path d="M2 4l3-3 3 3" fill="none" stroke="currentColor" strokeWidth="1.2" />

@@ -114,6 +114,10 @@
   color: var(--tm-text-primary);
 }
 
+.titlebar-pin-active {
+  color: var(--tm-accent) !important;
+}
+
 .titlebar-close:hover {
   background: var(--tm-danger);
   color: #ffffff;

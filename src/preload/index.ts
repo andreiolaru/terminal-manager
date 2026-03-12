@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron'
+import { contextBridge, ipcRenderer, clipboard } from 'electron'
 import { IPC_CHANNELS, SHORTCUT_NAMES } from '../shared/ipc-types'
 import type { PtyCreateOptions, ShortcutName } from '../shared/ipc-types'
 import type { LayoutTemplate } from '../shared/template-types'
@@ -140,6 +140,22 @@ const electronAPI = {
 
   windowMenuAction(action: string): void {
     ipcRenderer.send(IPC_CHANNELS.WINDOW_MENU_ACTION, action)
+  },
+
+  windowSetAlwaysOnTop(flag: boolean): void {
+    ipcRenderer.send(IPC_CHANNELS.WINDOW_SET_ALWAYS_ON_TOP, flag)
+  },
+
+  windowIsAlwaysOnTop(): Promise<boolean> {
+    return ipcRenderer.invoke(IPC_CHANNELS.WINDOW_IS_ALWAYS_ON_TOP)
+  },
+
+  clipboardWriteText(text: string): void {
+    clipboard.writeText(text)
+  },
+
+  clipboardReadText(): string {
+    return clipboard.readText()
   },
 
 }

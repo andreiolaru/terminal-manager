@@ -25,6 +25,8 @@ export const IPC_CHANNELS = {
   WINDOW_CLOSE: 'window:close',
   WINDOW_IS_MAXIMIZED: 'window:is-maximized',
   WINDOW_MENU_ACTION: 'window:menu-action',
+  WINDOW_SET_ALWAYS_ON_TOP: 'window:set-always-on-top',
+  WINDOW_IS_ALWAYS_ON_TOP: 'window:is-always-on-top',
 } as const
 
 export const SHORTCUT_NAMES = [
