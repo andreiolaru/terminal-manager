@@ -46,6 +46,7 @@ export function getSessionData(state: TerminalState): SessionData {
     nextGroupNumber: state.nextGroupNumber,
     sidebarCollapsed: state.sidebarCollapsed,
     titleBarVisible: state.titleBarVisible,
+    restoreScrollback: state.restoreScrollback,
     globalFontSize: state.globalFontSize
   }
 }
@@ -59,6 +60,7 @@ export const useTerminalStore = create<TerminalState>()(
     nextGroupNumber: 1,
     sidebarCollapsed: false,
     titleBarVisible: true,
+    restoreScrollback: false,
     globalFontSize: DEFAULT_FONT_SIZE,
 
     addGroup: (): string => {
@@ -381,6 +383,12 @@ export const useTerminalStore = create<TerminalState>()(
       })
     },
 
+    toggleRestoreScrollback: (): void => {
+      set((state) => {
+        state.restoreScrollback = !state.restoreScrollback
+      })
+    },
+
     setGlobalFontSize: (size): void => {
       set((state) => {
         state.globalFontSize = Math.min(32, Math.max(8, size))
@@ -419,9 +427,11 @@ export const useTerminalStore = create<TerminalState>()(
 
     restoreSession: (session: SessionData): void => {
       pendingScrollback.clear()
-      for (const [id, t] of Object.entries(session.terminals)) {
-        if (t.scrollback) {
-          pendingScrollback.set(id, t.scrollback)
+      if (session.restoreScrollback) {
+        for (const [id, t] of Object.entries(session.terminals)) {
+          if (t.scrollback) {
+            pendingScrollback.set(id, t.scrollback)
+          }
         }
       }
       set((state) => {
@@ -454,6 +464,7 @@ export const useTerminalStore = create<TerminalState>()(
         state.nextGroupNumber = session.nextGroupNumber
         state.sidebarCollapsed = session.sidebarCollapsed ?? false
         state.titleBarVisible = session.titleBarVisible ?? true
+        state.restoreScrollback = session.restoreScrollback ?? false
         state.globalFontSize = session.globalFontSize ?? DEFAULT_FONT_SIZE
       })
     }

@@ -10,14 +10,17 @@ import { initClaudeStatusDispatcher } from './lib/claude-status-dispatcher'
 import { confirmAppClose } from './lib/claude-close-guard'
 import { ipcApi, onShortcutSafe } from './lib/ipc-api'
 
-function getSessionDataWithScrollback(): import('../shared/session-types').SessionData {
-  const session = getSessionData(useTerminalStore.getState())
-  for (const [id, addon] of serializeAddonRegistry) {
-    if (session.terminals[id]) {
-      try {
-        session.terminals[id].scrollback = addon.serialize({ scrollback: SERIALIZE_SCROLLBACK_ROWS })
-      } catch {
-        // Serialize can fail if terminal is disposed
+function getSessionDataForSave(): import('../shared/session-types').SessionData {
+  const state = useTerminalStore.getState()
+  const session = getSessionData(state)
+  if (state.restoreScrollback) {
+    for (const [id, addon] of serializeAddonRegistry) {
+      if (session.terminals[id]) {
+        try {
+          session.terminals[id].scrollback = addon.serialize({ scrollback: SERIALIZE_SCROLLBACK_ROWS })
+        } catch {
+          // Serialize can fail if terminal is disposed
+        }
       }
     }
   }
@@ -42,8 +45,8 @@ function App() {
   useEffect(() => {
     if (!ipcApi?.onAppCloseRequested) return
     return ipcApi.onAppCloseRequested(() => {
-      // Save session with scrollback immediately before closing
-      ipcApi.saveSession(getSessionDataWithScrollback())
+      // Save session (with scrollback if enabled) immediately before closing
+      ipcApi.saveSession(getSessionDataForSave())
       confirmAppClose().then((ok) => {
         if (ok) ipcApi.confirmAppClose()
         else ipcApi.cancelAppClose()
