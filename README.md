@@ -6,10 +6,13 @@ A VS Code-style integrated terminal manager for Windows and macOS, built with El
 
 - **Split panes** — divide any terminal horizontally or vertically, nested to any depth
 - **Terminal groups** — independent tabbed workspaces, each with its own split layout
-- **Layout templates** — save and restore multi-terminal configurations
+- **Layout templates** — save and restore multi-terminal configurations with a visual editor (drag to adjust ratios, configure per-pane shell/cwd/startup commands)
+- **Clickable file paths** — file references in terminal output (e.g. `src/foo.ts:42`) open in VS Code on click
+- **Terminal search** — find text in terminal scrollback (Ctrl+Shift+F)
 - **Claude Code integration** — live status detection with indicators, tab badges, and desktop notifications
 - **Keyboard-driven** — full set of shortcuts for terminal, pane, and group management
 - **WebGL rendering** — hardware-accelerated terminal output via xterm.js
+- **Smart copy** — copies wrapped lines as single logical lines
 
 ## Quick Start
 
@@ -27,9 +30,9 @@ Requires Node.js 18+ and a C++ build toolchain for node-pty:
 | Layer | Technology |
 |---|---|
 | Shell | Electron 35 |
-| Build | electron-vite 3 |
+| Build | electron-vite 5, vite 7 |
 | UI | React 19, TypeScript (strict) |
-| Terminal | @xterm/xterm 5.5, FitAddon, WebglAddon |
+| Terminal | @xterm/xterm 5.5, FitAddon, WebglAddon, SearchAddon, SerializeAddon, Unicode11Addon, WebLinksAddon |
 | PTY | node-pty 1.0 |
 | Split panes | allotment 1.20 |
 | State | Zustand 5 + immer |
@@ -66,10 +69,10 @@ src/
     components/
       Layout/         Main layout shell
       Sidebar/        Terminal list, actions
-      Terminal/        Pane, instance, tabs, templates
+      Terminal/        Pane, instance, tabs, templates, visual editor, search bar
     store/            Zustand store + types
     hooks/            useTerminal, useShortcuts
-    lib/              IPC API, PTY dispatcher, tree utils, config
+    lib/              IPC API, PTY dispatcher, tree utils, file link provider, config
     assets/styles/    CSS files
 ```
 
