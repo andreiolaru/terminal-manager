@@ -18,6 +18,7 @@ export interface TerminalInfo {
   claudeModel?: string
   claudeContext?: string
   fontSize?: number
+  composeBarVisible?: boolean
 }
 
 export type NavigationDirection = 'left' | 'right' | 'up' | 'down'
@@ -48,6 +49,7 @@ export interface TerminalState {
   titleBarVisible: boolean
   restoreScrollback: boolean
   globalFontSize: number
+  globalComposeBar: boolean
 
   addGroup: () => string
   removeGroup: (groupId: string) => void
@@ -77,5 +79,7 @@ export interface TerminalState {
   setGroupFontSize: (groupId: string, size: number | undefined) => void
   setTerminalFontSize: (id: TerminalId, size: number | undefined) => void
   toggleZoom: (id: TerminalId) => void
+  toggleComposeBar: (id: TerminalId) => void
+  toggleGlobalComposeBar: () => void
   restoreSession: (session: import('../../shared/session-types').SessionData) => void
 }

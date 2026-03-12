@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useImperativeHandle, useRef, forwardRef } from 'react'
 import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import { WebglAddon } from '@xterm/addon-webgl'
@@ -13,6 +13,10 @@ import { defaultConfig } from '../../lib/config'
 import { RESIZE_DEBOUNCE_MS } from '../../lib/constants'
 import '@xterm/xterm/css/xterm.css'
 import '../../assets/styles/terminal.css'
+
+export interface TerminalInstanceHandle {
+  focus: () => void
+}
 
 interface TerminalInstanceProps {
   terminalId: string
@@ -91,10 +95,14 @@ function useResolvedFontSize(terminalId: string): number {
   })
 }
 
-export default function TerminalInstance({ terminalId, isVisible, isActive }: TerminalInstanceProps) {
+const TerminalInstance = forwardRef<TerminalInstanceHandle, TerminalInstanceProps>(function TerminalInstance({ terminalId, isVisible, isActive }, ref) {
   const containerRef = useRef<HTMLDivElement>(null)
   const terminalRef = useRef<Terminal | null>(null)
   const fitAddonRef = useRef<FitAddon | null>(null)
+
+  useImperativeHandle(ref, () => ({
+    focus: () => terminalRef.current?.focus()
+  }), [])
   const visibleRef = useRef(isVisible)
   visibleRef.current = isVisible
   const resolvedFontSize = useResolvedFontSize(terminalId)
@@ -392,4 +400,6 @@ export default function TerminalInstance({ terminalId, isVisible, isActive }: Te
       }}
     />
   )
-}
+})
+
+export default TerminalInstance

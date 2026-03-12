@@ -1,9 +1,12 @@
-import { memo, useCallback, useEffect, useState } from 'react'
+import { memo, useCallback, useEffect, useRef, useState } from 'react'
 import { useTerminalStore } from '../../store/terminal-store'
 import { confirmTerminalClose } from '../../lib/claude-close-guard'
 import TerminalInstance from './TerminalInstance'
+import type { TerminalInstanceHandle } from './TerminalInstance'
 import FontSizeMenu from './FontSizeMenu'
 import SearchBar from './SearchBar'
+import ComposeBar from './ComposeBar'
+import { ipcApi } from '../../lib/ipc-api'
 import '../../assets/styles/splitpane.css'
 import '../../assets/styles/claude-status.css'
 
@@ -40,10 +43,17 @@ export default memo(function TerminalPane({ terminalId, groupId }: TerminalPaneP
   const isZoomed = useTerminalStore(
     (s) => s.groups.find((g) => g.id === groupId)?.zoomedTerminalId === terminalId
   )
+  const composeBarVisible = useTerminalStore((s) => {
+    const override = s.terminals[terminalId]?.composeBarVisible
+    return override !== undefined ? override : s.globalComposeBar
+  })
+  const composeBarOverride = useTerminalStore((s) => s.terminals[terminalId]?.composeBarVisible)
   const splitTerminal = useTerminalStore((s) => s.splitTerminal)
   const removeTerminal = useTerminalStore((s) => s.removeTerminal)
   const setActiveTerminal = useTerminalStore((s) => s.setActiveTerminal)
   const toggleZoom = useTerminalStore((s) => s.toggleZoom)
+  const toggleComposeBar = useTerminalStore((s) => s.toggleComposeBar)
+  const terminalRef = useRef<TerminalInstanceHandle>(null)
   const [fontMenuOpen, setFontMenuOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
 
@@ -65,6 +75,12 @@ export default memo(function TerminalPane({ terminalId, groupId }: TerminalPaneP
     if (await confirmTerminalClose(terminalId)) removeTerminal(terminalId)
   }, [removeTerminal, terminalId])
   const handleMouseDown = useCallback(() => setActiveTerminal(terminalId), [setActiveTerminal, terminalId])
+  const handleComposeSubmit = useCallback((text: string) => {
+    ipcApi.writePty(terminalId, text + '\r')
+  }, [terminalId])
+  const handleComposeEscape = useCallback(() => {
+    terminalRef.current?.focus()
+  }, [])
 
   const statusClass = claudeStatus && claudeStatus !== 'not-tracked'
     ? ` claude-${claudeStatus}`
@@ -103,6 +119,14 @@ export default memo(function TerminalPane({ terminalId, groupId }: TerminalPaneP
             </div>
           )}
           <div className="terminal-title-actions">
+            <button
+              onClick={(e) => { e.stopPropagation(); toggleComposeBar(terminalId) }}
+              title={composeBarOverride === undefined ? 'Compose bar (inherited)' : composeBarVisible ? 'Compose bar (on)' : 'Compose bar (off)'}
+              aria-label="Toggle compose bar"
+              className={composeBarVisible ? 'active' : ''}
+            >
+              {'\u270E'}
+            </button>
             <button
               onClick={(e) => { e.stopPropagation(); setFontMenuOpen(!fontMenuOpen) }}
               title="Font size"
@@ -147,8 +171,9 @@ export default memo(function TerminalPane({ terminalId, groupId }: TerminalPaneP
         {searchOpen && (
           <SearchBar terminalId={terminalId} onClose={() => setSearchOpen(false)} />
         )}
-        <TerminalInstance terminalId={terminalId} isVisible={isGroupActive} isActive={isActive} />
+        <TerminalInstance ref={terminalRef} terminalId={terminalId} isVisible={isGroupActive} isActive={isActive} />
       </div>
+      {composeBarVisible && <ComposeBar onSubmit={handleComposeSubmit} onEscape={handleComposeEscape} />}
     </div>
   )
 })

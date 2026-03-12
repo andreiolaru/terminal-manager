@@ -23,7 +23,8 @@ export function getSessionData(state: TerminalState): SessionData {
       shell: t.shell,
       cwd: t.cwd,
       ...(t.claudeCode ? { claudeCode: true } : {}),
-      ...(t.fontSize !== undefined ? { fontSize: t.fontSize } : {})
+      ...(t.fontSize !== undefined ? { fontSize: t.fontSize } : {}),
+      ...(t.composeBarVisible !== undefined ? { composeBarVisible: t.composeBarVisible } : {})
     }
   }
 
@@ -47,7 +48,8 @@ export function getSessionData(state: TerminalState): SessionData {
     sidebarCollapsed: state.sidebarCollapsed,
     titleBarVisible: state.titleBarVisible,
     restoreScrollback: state.restoreScrollback,
-    globalFontSize: state.globalFontSize
+    globalFontSize: state.globalFontSize,
+    globalComposeBar: state.globalComposeBar
   }
 }
 
@@ -62,6 +64,7 @@ export const useTerminalStore = create<TerminalState>()(
     titleBarVisible: true,
     restoreScrollback: false,
     globalFontSize: DEFAULT_FONT_SIZE,
+    globalComposeBar: true,
 
     addGroup: (): string => {
       const groupId = uuid()
@@ -425,6 +428,24 @@ export const useTerminalStore = create<TerminalState>()(
       })
     },
 
+    toggleComposeBar: (id): void => {
+      set((state) => {
+        if (state.terminals[id]) {
+          const current = state.terminals[id].composeBarVisible
+          // Cycle: undefined (inherit) → false (off) → true (on) → undefined
+          if (current === undefined) state.terminals[id].composeBarVisible = false
+          else if (current === false) state.terminals[id].composeBarVisible = true
+          else state.terminals[id].composeBarVisible = undefined
+        }
+      })
+    },
+
+    toggleGlobalComposeBar: (): void => {
+      set((state) => {
+        state.globalComposeBar = !state.globalComposeBar
+      })
+    },
+
     restoreSession: (session: SessionData): void => {
       pendingScrollback.clear()
       if (session.restoreScrollback) {
@@ -446,7 +467,8 @@ export const useTerminalStore = create<TerminalState>()(
             isAlive: true,
             createdAt: now,
             claudeCode: t.claudeCode,
-            fontSize: t.fontSize
+            fontSize: t.fontSize,
+            composeBarVisible: t.composeBarVisible
           }
         }
         state.groups = session.groups.map((g) => ({
@@ -466,6 +488,7 @@ export const useTerminalStore = create<TerminalState>()(
         state.titleBarVisible = session.titleBarVisible ?? true
         state.restoreScrollback = session.restoreScrollback ?? false
         state.globalFontSize = session.globalFontSize ?? DEFAULT_FONT_SIZE
+        state.globalComposeBar = session.globalComposeBar ?? true
       })
     }
   }))

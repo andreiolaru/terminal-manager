@@ -15,6 +15,7 @@ export interface SerializedTerminal {
   cwd: string
   claudeCode?: boolean
   fontSize?: number
+  composeBarVisible?: boolean
   scrollback?: string
 }
 
@@ -39,4 +40,5 @@ export interface SessionData {
   titleBarVisible: boolean
   restoreScrollback: boolean
   globalFontSize: number
+  globalComposeBar?: boolean
 }

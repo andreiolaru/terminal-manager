@@ -1,0 +1,36 @@
+.compose-bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  background: var(--tm-sidebar-bg);
+  border-top: 1px solid var(--tm-accent);
+  padding: 6px 10px;
+}
+
+.compose-bar textarea {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--tm-text-primary);
+  font-family: var(--tm-font-family, 'Cascadia Code', 'Consolas', monospace);
+  font-size: 13px;
+  line-height: 1.4;
+  resize: none;
+  outline: none;
+  padding: 0;
+  min-height: 1.4em;
+  max-height: calc(1.4em * 5);
+  overflow-y: auto;
+}
+
+.compose-bar textarea::placeholder {
+  color: var(--tm-text-muted);
+}
+
+
+.compose-bar-hint {
+  font-size: 10px;
+  color: var(--tm-text-muted);
+  white-space: nowrap;
+}

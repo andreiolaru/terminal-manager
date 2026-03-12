@@ -56,6 +56,7 @@ function getMenus(onToggle: () => void): Record<string, MenuEntry[]> {
       { label: 'Reset Zoom', action: () => ipcApi.windowMenuAction('zoom-reset') },
       { separator: true },
       { label: `${s().restoreScrollback ? '✓ ' : ''}Restore Scrollback`, action: () => s().toggleRestoreScrollback() },
+      { label: `${s().globalComposeBar ? '✓ ' : ''}Compose Bar`, action: () => s().toggleGlobalComposeBar() },
     ],
     Shortcuts: [
       { label: 'New Terminal', shortcut: 'Ctrl+Shift+T', action: () => s().addTerminal() },
