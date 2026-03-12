@@ -158,6 +158,10 @@ const electronAPI = {
     return clipboard.readText()
   },
 
+  openExternal(url: string): void {
+    ipcRenderer.send(IPC_CHANNELS.OPEN_EXTERNAL, url)
+  },
+
 }
 
 contextBridge.exposeInMainWorld('electronAPI', electronAPI)

@@ -278,3 +278,193 @@
   font-size: 11px;
   margin-top: 4px;
 }
+
+/* ── Wide modal variant for visual editor ── */
+.template-manager-modal.wide {
+  width: 800px;
+}
+
+/* ── Visual Template Editor (tve-*) ── */
+.tve-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 4px 0;
+}
+
+.tve-metadata {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+/* Toolbar */
+.tve-toolbar {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.tve-toolbar button {
+  padding: 4px 10px;
+  font-size: 11px;
+  border-radius: 3px;
+  cursor: pointer;
+  border: 1px solid var(--tm-border);
+  background: var(--tm-hover-bg);
+  color: var(--tm-text-primary);
+}
+
+.tve-toolbar button:hover:not(:disabled) {
+  background: var(--tm-tab-hover-bg);
+}
+
+.tve-toolbar button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.tve-toolbar button.danger:hover:not(:disabled) {
+  background: var(--tm-danger);
+  border-color: var(--tm-danger);
+  color: #fff;
+}
+
+.tve-toolbar-info {
+  font-size: 11px;
+  color: var(--tm-text-muted);
+  margin-left: auto;
+}
+
+/* Preview area */
+.tve-preview {
+  border: 1px solid var(--tm-border);
+  border-radius: 4px;
+  background: #181818;
+  aspect-ratio: 16 / 9;
+  max-height: 300px;
+  padding: 3px;
+  display: flex;
+  overflow: hidden;
+}
+
+/* Branch (split container) */
+.tve-branch {
+  display: flex;
+  flex: 1;
+  gap: 0;
+  min-width: 0;
+  min-height: 0;
+}
+
+.tve-branch.horizontal {
+  flex-direction: row;
+}
+
+.tve-branch.vertical {
+  flex-direction: column;
+}
+
+/* Leaf (terminal pane) */
+.tve-leaf {
+  flex: 1;
+  background: var(--tm-hover-bg);
+  border: 2px solid transparent;
+  border-radius: 3px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 30px;
+  min-height: 24px;
+  padding: 4px;
+  overflow: hidden;
+  transition: border-color 0.1s, background 0.1s;
+}
+
+.tve-leaf:hover {
+  border-color: var(--tm-text-muted);
+}
+
+.tve-leaf.selected {
+  border-color: var(--tm-accent);
+  background: rgba(0, 122, 204, 0.12);
+}
+
+.tve-leaf-title {
+  font-size: 11px;
+  color: var(--tm-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  text-align: center;
+}
+
+.tve-leaf-shell {
+  font-size: 9px;
+  color: var(--tm-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* Drag handles between panes */
+.tve-drag-handle {
+  flex-shrink: 0;
+  background: transparent;
+  transition: background 0.15s;
+}
+
+.tve-drag-handle.h {
+  width: 5px;
+  cursor: col-resize;
+}
+
+.tve-drag-handle.v {
+  height: 5px;
+  cursor: row-resize;
+}
+
+.tve-drag-handle:hover {
+  background: var(--tm-accent);
+  border-radius: 2px;
+}
+
+/* Pane config panel */
+.tve-pane-config {
+  border-top: 1px solid var(--tm-border);
+  padding-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tve-pane-config-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.tve-pane-config-hint {
+  text-align: center;
+  color: var(--tm-text-muted);
+  font-size: 12px;
+  padding: 8px 0;
+}
+
+.tve-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--tm-text-secondary);
+  cursor: pointer;
+}
+
+.tve-checkbox-row input[type="checkbox"] {
+  accent-color: var(--tm-accent);
+}

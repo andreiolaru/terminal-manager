@@ -4,6 +4,7 @@ import { useTerminalStore } from '../../store/terminal-store'
 import { listTemplatesSafe, saveTemplatesSafe } from '../../lib/ipc-api'
 import { captureLayout } from '../../lib/layout-capture'
 import type { LayoutTemplate } from '../../../shared/template-types'
+import TemplateVisualEditor from './TemplateVisualEditor'
 import '../../assets/styles/template-manager.css'
 
 interface TemplateManagerProps {
@@ -14,7 +15,7 @@ export default function TemplateManager({ onClose }: TemplateManagerProps) {
   const [templates, setTemplates] = useState<LayoutTemplate[]>([])
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editForm, setEditForm] = useState({ name: '', icon: '', color: '' })
-  const [editMode, setEditMode] = useState<'form' | 'json'>('form')
+  const [editMode, setEditMode] = useState<'form' | 'layout' | 'json'>('layout')
   const [jsonText, setJsonText] = useState('')
   const [jsonError, setJsonError] = useState('')
   const [isSaving, setIsSaving] = useState(false)
@@ -72,7 +73,15 @@ export default function TemplateManager({ onClose }: TemplateManagerProps) {
     setEditForm({ name: tpl.name, icon: tpl.icon || '', color: tpl.color || '' })
     setJsonText(JSON.stringify(tpl, null, 2))
     setJsonError('')
-    setEditMode('form')
+    setEditMode('layout')
+  }
+
+  const handleVisualSave = (updated: LayoutTemplate): void => {
+    const newTemplates = templates.map((t) =>
+      t.id === editingId ? { ...updated, id: editingId } : t
+    )
+    persist(newTemplates)
+    setEditingId(null)
   }
 
   const commitEdit = (): void => {
@@ -105,13 +114,9 @@ export default function TemplateManager({ onClose }: TemplateManagerProps) {
     setEditingId(null)
   }
 
-  const handleOverlayClick = (e: React.MouseEvent): void => {
-    if (e.target === e.currentTarget) onClose()
-  }
-
   return (
-    <div className="template-manager-overlay" onClick={handleOverlayClick}>
-      <div className="template-manager-modal">
+    <div className="template-manager-overlay">
+      <div className={`template-manager-modal${editMode === 'layout' && editingId ? ' wide' : ''}`}>
         <div className="template-manager-header">
           <h2>Manage Templates</h2>
           <button className="template-manager-close" onClick={onClose} aria-label="Close">
@@ -122,6 +127,12 @@ export default function TemplateManager({ onClose }: TemplateManagerProps) {
           {editingId ? (
             <div className="template-editor">
               <div className="template-editor-tabs">
+                <button
+                  className={editMode === 'layout' ? 'active' : ''}
+                  onClick={() => setEditMode('layout')}
+                >
+                  Layout
+                </button>
                 <button
                   className={editMode === 'form' ? 'active' : ''}
                   onClick={() => setEditMode('form')}
@@ -137,6 +148,8 @@ export default function TemplateManager({ onClose }: TemplateManagerProps) {
                         { ...tpl, name: editForm.name.trim() || tpl.name, icon: editForm.icon || undefined, color: editForm.color || undefined },
                         null, 2
                       ))
+                    } else if (tpl) {
+                      setJsonText(JSON.stringify(tpl, null, 2))
                     }
                     setJsonError('')
                     setEditMode('json')
@@ -145,7 +158,13 @@ export default function TemplateManager({ onClose }: TemplateManagerProps) {
                   JSON
                 </button>
               </div>
-              {editMode === 'form' ? (
+              {editMode === 'layout' ? (
+                <TemplateVisualEditor
+                  template={templates.find((t) => t.id === editingId)!}
+                  onSave={handleVisualSave}
+                  onCancel={() => setEditingId(null)}
+                />
+              ) : editMode === 'form' ? (
                 <>
                   <div className="template-editor-field">
                     <label>Name</label>
@@ -187,10 +206,12 @@ export default function TemplateManager({ onClose }: TemplateManagerProps) {
                   {jsonError && <div className="template-json-error">{jsonError}</div>}
                 </div>
               )}
-              <div className="template-manager-footer" style={{ border: 'none', padding: '8px 0 0' }}>
-                <button onClick={() => setEditingId(null)}>Cancel</button>
-                <button className="primary" onClick={commitEdit}>Save</button>
-              </div>
+              {editMode !== 'layout' && (
+                <div className="template-manager-footer" style={{ border: 'none', padding: '8px 0 0' }}>
+                  <button onClick={() => setEditingId(null)}>Cancel</button>
+                  <button className="primary" onClick={commitEdit}>Save</button>
+                </div>
+              )}
             </div>
           ) : (
             <div className="template-manager-list">

@@ -1,8 +1,9 @@
-import { memo, useCallback, useState } from 'react'
+import { memo, useCallback, useEffect, useState } from 'react'
 import { useTerminalStore } from '../../store/terminal-store'
 import { confirmTerminalClose } from '../../lib/claude-close-guard'
 import TerminalInstance from './TerminalInstance'
 import FontSizeMenu from './FontSizeMenu'
+import SearchBar from './SearchBar'
 import '../../assets/styles/splitpane.css'
 import '../../assets/styles/claude-status.css'
 
@@ -40,6 +41,19 @@ export default memo(function TerminalPane({ terminalId, groupId }: TerminalPaneP
   const removeTerminal = useTerminalStore((s) => s.removeTerminal)
   const setActiveTerminal = useTerminalStore((s) => s.setActiveTerminal)
   const [fontMenuOpen, setFontMenuOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
+
+  useEffect(() => {
+    if (!isActive || !isGroupActive) return
+    const handler = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.shiftKey && e.key === 'F') {
+        e.preventDefault()
+        setSearchOpen((prev) => !prev)
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [isActive, isGroupActive])
 
   const handleSplitH = useCallback(() => splitTerminal(terminalId, 'horizontal'), [splitTerminal, terminalId])
   const handleSplitV = useCallback(() => splitTerminal(terminalId, 'vertical'), [splitTerminal, terminalId])
@@ -118,6 +132,9 @@ export default memo(function TerminalPane({ terminalId, groupId }: TerminalPaneP
         )}
       </div>
       <div className="terminal-content">
+        {searchOpen && (
+          <SearchBar terminalId={terminalId} onClose={() => setSearchOpen(false)} />
+        )}
         <TerminalInstance terminalId={terminalId} isVisible={isGroupActive} isActive={isActive} />
       </div>
     </div>

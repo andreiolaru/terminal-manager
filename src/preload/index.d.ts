@@ -33,6 +33,7 @@ export interface ElectronAPI {
   windowIsAlwaysOnTop(): Promise<boolean>
   clipboardWriteText(text: string): void
   clipboardReadText(): string
+  openExternal(url: string): void
 }
 
 declare global {

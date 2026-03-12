@@ -27,6 +27,7 @@ export const IPC_CHANNELS = {
   WINDOW_MENU_ACTION: 'window:menu-action',
   WINDOW_SET_ALWAYS_ON_TOP: 'window:set-always-on-top',
   WINDOW_IS_ALWAYS_ON_TOP: 'window:is-always-on-top',
+  OPEN_EXTERNAL: 'shell:open-external',
 } as const
 
 export const SHORTCUT_NAMES = [

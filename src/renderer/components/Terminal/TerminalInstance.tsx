@@ -2,6 +2,9 @@ import { useEffect, useRef } from 'react'
 import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import { WebglAddon } from '@xterm/addon-webgl'
+import { SearchAddon } from '@xterm/addon-search'
+import { WebLinksAddon } from '@xterm/addon-web-links'
+import { Unicode11Addon } from '@xterm/addon-unicode11'
 import { ipcApi } from '../../lib/ipc-api'
 import { registerTerminal, unregisterTerminal, registerFirstDataCallback } from '../../lib/pty-dispatcher'
 import { useTerminalStore } from '../../store/terminal-store'
@@ -22,7 +25,10 @@ interface TerminalInstanceProps {
 const persistedTerminals = new Map<string, {
   terminal: Terminal
   fitAddon: FitAddon
+  searchAddon: SearchAddon
 }>()
+
+import { searchAddonRegistry } from '../../lib/search-registry'
 
 function useResolvedFontSize(terminalId: string): number {
   return useTerminalStore((s) => {
@@ -52,12 +58,15 @@ export default function TerminalInstance({ terminalId, isVisible, isActive }: Te
     const persisted = persistedTerminals.get(terminalId)
     let terminal: Terminal
     let fitAddon: FitAddon
+    let searchAddon: SearchAddon
     let isReattach = false
 
     if (persisted) {
       // Reattach existing terminal — preserves PTY session and scrollback
       terminal = persisted.terminal
       fitAddon = persisted.fitAddon
+      searchAddon = persisted.searchAddon
+      searchAddonRegistry.set(terminalId, searchAddon)
       persistedTerminals.delete(terminalId)
       isReattach = true
 
@@ -77,7 +86,8 @@ export default function TerminalInstance({ terminalId, isVisible, isActive }: Te
           cursor: defaultConfig.theme.cursor,
           selectionBackground: defaultConfig.theme.selectionBackground
         },
-        scrollback: defaultConfig.scrollback
+        scrollback: defaultConfig.scrollback,
+        allowProposedApi: true
       })
 
       fitAddon = new FitAddon()
@@ -87,6 +97,12 @@ export default function TerminalInstance({ terminalId, isVisible, isActive }: Te
         // Let Electron menu accelerators handle these combos
         if (e.type !== 'keydown') return true
 
+        // Ctrl+Delete: delete word forward (send escape sequence to shell)
+        if (e.ctrlKey && !e.shiftKey && e.key === 'Delete') {
+          terminal.input('\x1b[3;5~')
+          return false
+        }
+
         // Ctrl+C copies selected text instead of sending SIGINT when there's a selection
         if (e.ctrlKey && !e.shiftKey && e.key === 'c' && terminal.hasSelection()) {
           window.electronAPI.clipboardWriteText(terminal.getSelection())
@@ -94,7 +110,7 @@ export default function TerminalInstance({ terminalId, isVisible, isActive }: Te
           return false
         }
 
-        if (e.ctrlKey && e.shiftKey && ['T', 'W', 'D', 'E', 'B'].includes(e.key)) return false
+        if (e.ctrlKey && e.shiftKey && ['T', 'W', 'D', 'E', 'B', 'F'].includes(e.key)) return false
         if (e.ctrlKey && !e.shiftKey && e.key === 'b') return false
         if (e.ctrlKey && e.key === 'Tab') return false
         if (e.altKey && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) return false
@@ -113,6 +129,22 @@ export default function TerminalInstance({ terminalId, isVisible, isActive }: Te
       } catch {
         console.warn('WebGL addon failed to load, using canvas renderer')
       }
+
+      // Unicode 11 — proper wide/emoji character rendering
+      const unicode11 = new Unicode11Addon()
+      terminal.loadAddon(unicode11)
+      terminal.unicode.activeVersion = '11'
+
+      // Clickable URLs — open in system browser via IPC
+      const webLinks = new WebLinksAddon((_event, uri) => {
+        window.electronAPI.openExternal(uri)
+      })
+      terminal.loadAddon(webLinks)
+
+      // Search — exposed via searchAddonRegistry for SearchBar component
+      searchAddon = new SearchAddon()
+      terminal.loadAddon(searchAddon)
+      searchAddonRegistry.set(terminalId, searchAddon)
     }
 
     fitAddon.fit()
@@ -207,9 +239,10 @@ export default function TerminalInstance({ terminalId, isVisible, isActive }: Te
       // If terminal still exists in store, this is a tree restructure (split) — persist for reattach
       const stillInStore = !!useTerminalStore.getState().terminals[terminalId]
       if (stillInStore) {
-        persistedTerminals.set(terminalId, { terminal, fitAddon })
+        persistedTerminals.set(terminalId, { terminal, fitAddon, searchAddon })
       } else {
         // Terminal was removed — full cleanup
+        searchAddonRegistry.delete(terminalId)
         ipcApi.unregisterClaude(terminalId)
         unregisterTerminal(terminalId)
         terminal.dispose()

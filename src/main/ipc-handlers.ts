@@ -188,6 +188,17 @@ export function registerIpcHandlers(
     return BrowserWindow.fromWebContents(event.sender)?.isAlwaysOnTop() ?? false
   })
 
+  ipcMain.on(IPC_CHANNELS.OPEN_EXTERNAL, (_, url: string) => {
+    try {
+      const parsed = new URL(url)
+      if (['http:', 'https:', 'mailto:'].includes(parsed.protocol)) {
+        shell.openExternal(url)
+      }
+    } catch {
+      // Invalid URL, ignore
+    }
+  })
+
   ipcMain.on(IPC_CHANNELS.CLAUDE_REGISTER, (_, id: string) => {
     detector?.register(id)
   })
