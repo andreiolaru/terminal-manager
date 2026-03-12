@@ -179,6 +179,9 @@ export const useTerminalStore = create<TerminalState>()(
           }
         } else {
           group.splitTree = newTree
+          if (group.zoomedTerminalId === id) {
+            group.zoomedTerminalId = undefined
+          }
           if (group.activeTerminalId === id) {
             // C6: Guard against empty remaining array
             const remaining = collectLeafIds(newTree)
@@ -368,6 +371,19 @@ export const useTerminalStore = create<TerminalState>()(
       set((state) => {
         if (state.terminals[id]) {
           state.terminals[id].fontSize = size !== undefined ? Math.min(32, Math.max(8, size)) : undefined
+        }
+      })
+    },
+
+    toggleZoom: (id): void => {
+      set((state) => {
+        const group = state.groups.find((g) =>
+          g.splitTree.type === 'leaf'
+            ? g.splitTree.terminalId === id
+            : JSON.stringify(g.splitTree).includes(id)
+        )
+        if (group) {
+          group.zoomedTerminalId = group.zoomedTerminalId === id ? undefined : id
         }
       })
     }

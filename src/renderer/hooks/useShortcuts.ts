@@ -35,6 +35,11 @@ export function useShortcuts(): void {
         onShortcutSafe(`navigate-${dir}`, () => getState().navigatePane(dir))
       ),
       onShortcutSafe('toggle-sidebar', () => getState().toggleSidebar()),
+      onShortcutSafe('toggle-zoom', () => {
+        const s = getState()
+        const group = s.groups.find((g) => g.id === s.activeGroupId)
+        if (group) s.toggleZoom(group.activeTerminalId)
+      }),
     ]
 
     return () => unsubscribers.forEach((fn) => fn())

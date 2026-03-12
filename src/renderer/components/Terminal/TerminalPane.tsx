@@ -37,9 +37,13 @@ export default memo(function TerminalPane({ terminalId, groupId }: TerminalPaneP
     (s) => s.groups.find((g) => g.id === groupId)?.activeTerminalId === terminalId
   )
   const isGroupActive = useTerminalStore((s) => s.activeGroupId === groupId)
+  const isZoomed = useTerminalStore(
+    (s) => s.groups.find((g) => g.id === groupId)?.zoomedTerminalId === terminalId
+  )
   const splitTerminal = useTerminalStore((s) => s.splitTerminal)
   const removeTerminal = useTerminalStore((s) => s.removeTerminal)
   const setActiveTerminal = useTerminalStore((s) => s.setActiveTerminal)
+  const toggleZoom = useTerminalStore((s) => s.toggleZoom)
   const [fontMenuOpen, setFontMenuOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
 
@@ -106,6 +110,14 @@ export default memo(function TerminalPane({ terminalId, groupId }: TerminalPaneP
               className={fontMenuOpen ? 'active' : ''}
             >
               A
+            </button>
+            <button
+              onClick={() => toggleZoom(terminalId)}
+              title={isZoomed ? 'Restore pane (Ctrl+Shift+M)' : 'Zoom pane (Ctrl+Shift+M)'}
+              aria-label={isZoomed ? 'Restore pane' : 'Zoom pane'}
+              className={isZoomed ? 'active' : ''}
+            >
+              {isZoomed ? '\u29C9' : '\u2922'}
             </button>
             <button onClick={handleSplitH} title="Split Right (Ctrl+Shift+D)" aria-label="Split Right">
               ⫼

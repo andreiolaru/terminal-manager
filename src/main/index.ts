@@ -19,6 +19,7 @@ const SHORTCUT_ACCELERATORS: Record<string, string> = {
   'navigate-down': 'Alt+Down',
   'toggle-sidebar': 'CmdOrCtrl+B',
   'toggle-titlebar': 'CmdOrCtrl+Shift+B',
+  'toggle-zoom': 'CmdOrCtrl+Shift+M',
 }
 
 app.setAppUserModelId('com.terminal-manager.app')

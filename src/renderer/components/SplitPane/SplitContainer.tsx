@@ -2,6 +2,7 @@ import { memo, useRef, useCallback, Component, type ReactNode, type ErrorInfo } 
 import { Allotment, type AllotmentHandle } from 'allotment'
 import 'allotment/dist/style.css'
 import type { SplitNode, SplitDirection } from '../../store/types'
+import { useTerminalStore } from '../../store/terminal-store'
 import TerminalPane from '../Terminal/TerminalPane'
 import '../../assets/styles/snap-indicator.css'
 
@@ -145,9 +146,17 @@ class SplitErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryStat
 }
 
 export default function SplitContainerWithBoundary({ node, groupId }: SplitContainerProps) {
+  const zoomedTerminalId = useTerminalStore(
+    (s) => s.groups.find((g) => g.id === groupId)?.zoomedTerminalId
+  )
+
   return (
     <SplitErrorBoundary groupId={groupId}>
-      <SplitContainer node={node} groupId={groupId} />
+      {zoomedTerminalId ? (
+        <TerminalPane terminalId={zoomedTerminalId} groupId={groupId} />
+      ) : (
+        <SplitContainer node={node} groupId={groupId} />
+      )}
     </SplitErrorBoundary>
   )
 }

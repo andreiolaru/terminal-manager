@@ -50,6 +50,7 @@ export interface TerminalGroup {
     angle?: number
   }
   fontSize?: number
+  zoomedTerminalId?: TerminalId
 }
 
 export interface TerminalState {
@@ -88,4 +89,5 @@ export interface TerminalState {
   setGlobalFontSize: (size: number) => void
   setGroupFontSize: (groupId: string, size: number | undefined) => void
   setTerminalFontSize: (id: TerminalId, size: number | undefined) => void
+  toggleZoom: (id: TerminalId) => void
 }

@@ -30,6 +30,16 @@ const persistedTerminals = new Map<string, {
 
 import { searchAddonRegistry } from '../../lib/search-registry'
 
+function pasteWithWarning(terminal: Terminal): void {
+  const text = window.electronAPI.clipboardReadText()
+  if (!text) return
+  const lines = text.split('\n')
+  if (lines.length > 2 || (lines.length === 2 && lines[1].trim() !== '')) {
+    if (!window.confirm(`You are about to paste ${lines.length} lines. Continue?`)) return
+  }
+  terminal.paste(text)
+}
+
 function useResolvedFontSize(terminalId: string): number {
   return useTerminalStore((s) => {
     const term = s.terminals[terminalId]
@@ -103,6 +113,12 @@ export default function TerminalInstance({ terminalId, isVisible, isActive }: Te
           return false
         }
 
+        // Ctrl+V / Ctrl+Shift+V: paste with multi-line warning
+        if (e.ctrlKey && (e.key === 'v' || e.key === 'V')) {
+          pasteWithWarning(terminal)
+          return false
+        }
+
         // Ctrl+C copies selected text instead of sending SIGINT when there's a selection
         if (e.ctrlKey && !e.shiftKey && e.key === 'c' && terminal.hasSelection()) {
           window.electronAPI.clipboardWriteText(terminal.getSelection())
@@ -145,6 +161,12 @@ export default function TerminalInstance({ terminalId, isVisible, isActive }: Te
       searchAddon = new SearchAddon()
       terminal.loadAddon(searchAddon)
       searchAddonRegistry.set(terminalId, searchAddon)
+
+      // Visual bell — brief flash on BEL character
+      terminal.onBell(() => {
+        containerRef.current?.classList.add('terminal-bell')
+        setTimeout(() => containerRef.current?.classList.remove('terminal-bell'), 150)
+      })
     }
 
     fitAddon.fit()
@@ -295,11 +317,8 @@ export default function TerminalInstance({ terminalId, isVisible, isActive }: Te
         if (terminalRef.current?.hasSelection()) {
           window.electronAPI.clipboardWriteText(terminalRef.current.getSelection())
           terminalRef.current.clearSelection()
-        } else {
-          const text = window.electronAPI.clipboardReadText()
-          if (text && terminalRef.current) {
-            terminalRef.current.paste(text)
-          }
+        } else if (terminalRef.current) {
+          pasteWithWarning(terminalRef.current)
         }
       }}
     />

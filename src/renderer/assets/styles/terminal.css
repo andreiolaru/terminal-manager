@@ -32,11 +32,26 @@
 .terminal-container {
   width: 100%;
   height: 100%;
+  position: relative;
 }
 
 .terminal-container .xterm {
   height: 100%;
   padding: 4px;
+}
+
+.terminal-bell::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+  animation: bell-flash 200ms ease-out forwards;
+}
+
+@keyframes bell-flash {
+  0% { background-color: rgba(255, 255, 255, 0.15); }
+  100% { background-color: transparent; }
 }
 
 .terminal-panel-empty kbd {

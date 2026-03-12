@@ -43,6 +43,7 @@ export const SHORTCUT_NAMES = [
   'navigate-down',
   'toggle-sidebar',
   'toggle-titlebar',
+  'toggle-zoom',
 ] as const
 
 export type ShortcutName = (typeof SHORTCUT_NAMES)[number]
