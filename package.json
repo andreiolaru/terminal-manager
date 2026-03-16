@@ -19,7 +19,6 @@
   "dependencies": {
     "@xterm/addon-fit": "^0.10.0",
     "@xterm/addon-search": "^0.16.0",
-    "@xterm/addon-serialize": "^0.14.0",
     "@xterm/addon-unicode11": "^0.9.0",
     "@xterm/addon-web-links": "^0.12.0",
     "@xterm/addon-webgl": "^0.18.0",
@@ -44,6 +43,7 @@
     "electron-builder": "^25.0.0",
     "electron-vite": "^5.0.0",
     "jsdom": "^28.1.0",
+    "rcedit": "^5.0.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "typescript": "^5.7.0",

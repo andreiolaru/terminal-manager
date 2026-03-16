@@ -47,7 +47,6 @@ export interface TerminalState {
   nextGroupNumber: number
   sidebarCollapsed: boolean
   titleBarVisible: boolean
-  restoreScrollback: boolean
   globalFontSize: number
   globalComposeBar: boolean
 
@@ -73,7 +72,6 @@ export interface TerminalState {
   setClaudeInfo: (id: TerminalId, model?: string, context?: string) => void
   toggleSidebar: () => void
   toggleTitleBar: () => void
-  toggleRestoreScrollback: () => void
 
   setGlobalFontSize: (size: number) => void
   setGroupFontSize: (groupId: string, size: number | undefined) => void

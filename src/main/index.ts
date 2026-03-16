@@ -36,7 +36,11 @@ let forceClose = false
 let closeTimeout: ReturnType<typeof setTimeout> | null = null
 const CLOSE_TIMEOUT_MS = 5000
 
-const appIcon = nativeImage.createFromPath(join(__dirname, '../../resources/icon.png'))
+const appIcon = nativeImage.createFromPath(
+  process.env.ELECTRON_RENDERER_URL
+    ? join(__dirname, '../../resources/icon.png')
+    : join(process.resourcesPath, 'icon.png')
+)
 
 function isWindowStateOnScreen(state: WindowState): boolean {
   const displays = screen.getAllDisplays()

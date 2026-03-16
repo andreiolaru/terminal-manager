@@ -13,6 +13,10 @@ mac:
   target: dmg
   icon: resources/icon.icns
   category: public.app-category.developer-tools
+afterPack: scripts/afterPack.cjs
+extraResources:
+  - from: resources/icon.png
+    to: icon.png
 npmRebuild: false
 asar: true
 asarUnpack:
