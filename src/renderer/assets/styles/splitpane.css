@@ -19,6 +19,8 @@
   display: flex;
   align-items: center;
   padding: 2px 8px;
+  min-height: 24px;
+  max-height: 24px;
   background: linear-gradient(var(--tm-group-color-bg, transparent), var(--tm-group-color-bg, transparent)), var(--tm-titlebar-bg);
   border-bottom: 1px solid var(--tm-border);
   border-left: 2px solid transparent;
@@ -27,13 +29,15 @@
   gap: 4px;
 }
 
-/* Content: name — command (wraps if long) */
+/* Content: name — command (truncated to prevent title bar height changes) */
 .terminal-title-content {
   flex: 1;
   min-width: 0;
   line-height: 18px;
   font-size: 11px;
-  word-break: break-word;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .terminal-title-name {

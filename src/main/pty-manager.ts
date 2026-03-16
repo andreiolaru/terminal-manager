@@ -21,6 +21,13 @@ export class PtyManager {
   }
 
   create(id: string, shell: string, cwd: string, cols: number, rows: number): void {
+    // Kill any existing PTY with the same ID (e.g., after HMR renderer reload)
+    const existing = this.ptys.get(id)
+    if (existing) {
+      this.ptys.delete(id)
+      existing.kill()
+    }
+
     // M18: Filter out undefined env values
     const env = Object.fromEntries(
       Object.entries(process.env).filter((entry): entry is [string, string] => entry[1] !== undefined)

@@ -5,7 +5,6 @@ import { WebglAddon } from '@xterm/addon-webgl'
 import { SearchAddon } from '@xterm/addon-search'
 import { WebLinksAddon } from '@xterm/addon-web-links'
 import { Unicode11Addon } from '@xterm/addon-unicode11'
-import { SerializeAddon } from '@xterm/addon-serialize'
 import { ipcApi } from '../../lib/ipc-api'
 import { registerTerminal, unregisterTerminal, registerFirstDataCallback } from '../../lib/pty-dispatcher'
 import { useTerminalStore } from '../../store/terminal-store'
@@ -27,16 +26,31 @@ interface TerminalInstanceProps {
 // Persists terminal instances across unmount/remount cycles during split operations.
 // When a split changes the React tree structure, the old component unmounts and a new one
 // mounts for the same terminalId. This map preserves the xterm + PTY session across that gap.
-const persistedTerminals = new Map<string, {
-  terminal: Terminal
-  fitAddon: FitAddon
-  searchAddon: SearchAddon
-  serializeAddon: SerializeAddon
-}>()
+// Stored on globalThis so the map survives HMR module reloads in dev mode.
+type PersistedEntry = { terminal: Terminal; fitAddon: FitAddon; searchAddon: SearchAddon }
+const persistedTerminals: Map<string, PersistedEntry> =
+  (globalThis as Record<string, unknown>).__persistedTerminals as Map<string, PersistedEntry> ??
+  ((globalThis as Record<string, unknown>).__persistedTerminals = new Map<string, PersistedEntry>())
+
+/** Call fit() only when dimensions actually change; preserve scroll position. */
+function safeFit(terminal: Terminal, fitAddon: FitAddon): boolean {
+  const dims = fitAddon.proposeDimensions()
+  if (!dims || (dims.cols === terminal.cols && dims.rows === terminal.rows)) {
+    return false
+  }
+  const buf = terminal.buffer.active
+  const wasAtBottom = buf.viewportY >= buf.baseY
+  const savedY = buf.viewportY
+
+  fitAddon.fit()
+
+  if (!wasAtBottom) {
+    terminal.scrollToLine(savedY)
+  }
+  return true
+}
 
 import { searchAddonRegistry } from '../../lib/search-registry'
-import { serializeAddonRegistry } from '../../lib/serialize-registry'
-import { pendingScrollback } from '../../lib/pending-scrollback'
 import { registerFileLinkProvider } from '../../lib/file-link-provider'
 
 /** Copy selection with soft-wrapped lines joined into single logical lines. */
@@ -114,7 +128,6 @@ const TerminalInstance = forwardRef<TerminalInstanceHandle, TerminalInstanceProp
     let terminal: Terminal
     let fitAddon: FitAddon
     let searchAddon: SearchAddon
-    let serializeAddon: SerializeAddon
     let isReattach = false
 
     if (persisted) {
@@ -122,9 +135,7 @@ const TerminalInstance = forwardRef<TerminalInstanceHandle, TerminalInstanceProp
       terminal = persisted.terminal
       fitAddon = persisted.fitAddon
       searchAddon = persisted.searchAddon
-      serializeAddon = persisted.serializeAddon
       searchAddonRegistry.set(terminalId, searchAddon)
-      serializeAddonRegistry.set(terminalId, serializeAddon)
       persistedTerminals.delete(terminalId)
       isReattach = true
 
@@ -156,18 +167,6 @@ const TerminalInstance = forwardRef<TerminalInstanceHandle, TerminalInstanceProp
       terminal.loadAddon(searchAddon)
       searchAddonRegistry.set(terminalId, searchAddon)
 
-      // Serialize — exposed via serializeAddonRegistry for session save
-      serializeAddon = new SerializeAddon()
-      terminal.loadAddon(serializeAddon)
-      serializeAddonRegistry.set(terminalId, serializeAddon)
-
-      // Restore scrollback BEFORE open() to avoid rendering intermediate frames
-      const savedScrollback = pendingScrollback.get(terminalId)
-      if (savedScrollback) {
-        terminal.write(savedScrollback)
-        pendingScrollback.delete(terminalId)
-      }
-
       terminal.attachCustomKeyEventHandler((e) => {
         // Let Electron menu accelerators handle these combos
         if (e.type !== 'keydown') return true
@@ -197,6 +196,11 @@ const TerminalInstance = forwardRef<TerminalInstanceHandle, TerminalInstanceProp
         if (e.altKey && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) return false
         return true
       })
+
+      // Clear stale xterm elements (e.g., from HMR reload reusing the container DOM node)
+      while (containerRef.current.firstChild) {
+        containerRef.current.removeChild(containerRef.current.firstChild)
+      }
 
       terminal.open(containerRef.current)
 
@@ -242,11 +246,11 @@ const TerminalInstance = forwardRef<TerminalInstanceHandle, TerminalInstanceProp
       // fitAddon can measure the correct dimensions (otherwise the terminal
       // keeps its old size after a sibling pane is closed).
       requestAnimationFrame(() => {
-        fitAddon.fit()
+        safeFit(terminal, fitAddon)
         ipcApi.resizePty(terminalId, terminal.cols, terminal.rows)
       })
     } else {
-      fitAddon.fit()
+      safeFit(terminal, fitAddon)
     }
 
     // Capture claude flag at mount time for cleanup
@@ -318,9 +322,8 @@ const TerminalInstance = forwardRef<TerminalInstanceHandle, TerminalInstanceProp
         if (rafId !== null) cancelAnimationFrame(rafId)
         rafId = requestAnimationFrame(() => {
           rafId = null
-          if (fitAddonRef.current && visibleRef.current) {
-            fitAddonRef.current.fit()
-            if (terminalRef.current) {
+          if (fitAddonRef.current && visibleRef.current && terminalRef.current) {
+            if (safeFit(terminalRef.current, fitAddonRef.current)) {
               ipcApi.resizePty(terminalId, terminalRef.current.cols, terminalRef.current.rows)
             }
           }
@@ -337,11 +340,10 @@ const TerminalInstance = forwardRef<TerminalInstanceHandle, TerminalInstanceProp
       // If terminal still exists in store, this is a tree restructure (split) — persist for reattach
       const stillInStore = !!useTerminalStore.getState().terminals[terminalId]
       if (stillInStore) {
-        persistedTerminals.set(terminalId, { terminal, fitAddon, searchAddon, serializeAddon })
+        persistedTerminals.set(terminalId, { terminal, fitAddon, searchAddon })
       } else {
         // Terminal was removed — full cleanup
         searchAddonRegistry.delete(terminalId)
-        serializeAddonRegistry.delete(terminalId)
         ipcApi.unregisterClaude(terminalId)
         unregisterTerminal(terminalId)
         terminal.dispose()
@@ -352,11 +354,12 @@ const TerminalInstance = forwardRef<TerminalInstanceHandle, TerminalInstanceProp
 
   // Refit when becoming visible
   useEffect(() => {
-    if (isVisible && fitAddonRef.current) {
+    if (isVisible && fitAddonRef.current && terminalRef.current) {
+      const t = terminalRef.current
+      const f = fitAddonRef.current
       requestAnimationFrame(() => {
-        fitAddonRef.current?.fit()
-        if (terminalRef.current) {
-          ipcApi.resizePty(terminalId, terminalRef.current.cols, terminalRef.current.rows)
+        if (safeFit(t, f)) {
+          ipcApi.resizePty(terminalId, t.cols, t.rows)
         }
       })
     }
@@ -367,10 +370,11 @@ const TerminalInstance = forwardRef<TerminalInstanceHandle, TerminalInstanceProp
     if (terminalRef.current && terminalRef.current.options.fontSize !== resolvedFontSize) {
       terminalRef.current.options.fontSize = resolvedFontSize
       if (fitAddonRef.current && visibleRef.current) {
+        const t = terminalRef.current
+        const f = fitAddonRef.current
         requestAnimationFrame(() => {
-          fitAddonRef.current?.fit()
-          if (terminalRef.current) {
-            ipcApi.resizePty(terminalId, terminalRef.current.cols, terminalRef.current.rows)
+          if (safeFit(t, f)) {
+            ipcApi.resizePty(terminalId, t.cols, t.rows)
           }
         })
       }
