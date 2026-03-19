@@ -1,5 +1,8 @@
 # Terminal Manager
 
+<img width="1919" height="1030" alt="image" src="https://github.com/user-attachments/assets/8afc3283-04d7-40c0-8940-63b2101a86ca" />
+
+
 A VS Code-style integrated terminal manager for Windows and macOS, built with Electron, React, and xterm.js. Run multiple shells in split panes, organize them into tabbed groups, and save layouts as reusable templates.
 
 ## Features
