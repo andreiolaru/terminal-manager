@@ -15,9 +15,20 @@ A VS Code-style integrated terminal manager for Windows and macOS, built with El
 - **Smart copy** — copies wrapped lines as single logical lines
 
 ---
+
+This is on 1920x1080 resolution - plenty of space optimized!
+
 <img width="1919" height="1030" alt="image" src="https://github.com/user-attachments/assets/8afc3283-04d7-40c0-8940-63b2101a86ca" />
 
+---
+
+You can toggle the left sidebar, as well as the top bar. You have a snap-in terminal resize option, in case you want to bring them to the same width/height.
+
 <img width="1919" height="1030" alt="image" src="https://github.com/user-attachments/assets/2e5d0275-4443-4030-8a7c-6bcc2cabeb05" />
+
+---
+
+You can create and edit your own terminal templates in a grid system, configure them how to run.
 
 <img width="1029" height="835" alt="image" src="https://github.com/user-attachments/assets/bcfe1624-7fb8-4103-98f2-76e1636310c6" />
 ---
