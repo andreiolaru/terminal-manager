@@ -1,12 +1,5 @@
 # Terminal Manager
 
-<img width="1919" height="1030" alt="image" src="https://github.com/user-attachments/assets/8afc3283-04d7-40c0-8940-63b2101a86ca" />
-
-<img width="1919" height="1030" alt="image" src="https://github.com/user-attachments/assets/2e5d0275-4443-4030-8a7c-6bcc2cabeb05" />
-
-<img width="1029" height="835" alt="image" src="https://github.com/user-attachments/assets/bcfe1624-7fb8-4103-98f2-76e1636310c6" />
-
-
 A VS Code-style integrated terminal manager for Windows and macOS, built with Electron, React, and xterm.js. Run multiple shells in split panes, organize them into tabbed groups, and save layouts as reusable templates.
 
 ## Features
@@ -20,6 +13,14 @@ A VS Code-style integrated terminal manager for Windows and macOS, built with El
 - **Keyboard-driven** — full set of shortcuts for terminal, pane, and group management
 - **WebGL rendering** — hardware-accelerated terminal output via xterm.js
 - **Smart copy** — copies wrapped lines as single logical lines
+
+---
+<img width="1919" height="1030" alt="image" src="https://github.com/user-attachments/assets/8afc3283-04d7-40c0-8940-63b2101a86ca" />
+
+<img width="1919" height="1030" alt="image" src="https://github.com/user-attachments/assets/2e5d0275-4443-4030-8a7c-6bcc2cabeb05" />
+
+<img width="1029" height="835" alt="image" src="https://github.com/user-attachments/assets/bcfe1624-7fb8-4103-98f2-76e1636310c6" />
+---
 
 ## Quick Start
 
